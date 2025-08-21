@@ -6,6 +6,16 @@ repo_name: "will-langdale/griffonner"
 nav:
 - Home:
   - Welcome: index.md
+  - Getting started: getting-started.md
+- User guide:
+  - CLI reference: cli-reference.md
+  - Watch mode: watch-mode.md
+- Templates:
+  - Template development: templates.md
+  - Template reference: template-reference.md
+- Reference:
+  - API documentation: api.md
+- Development:
   - AI instructions: ai.md
 
 theme:
@@ -83,7 +93,7 @@ plugins:
               - griffe_inherited_docstrings
             docstring_options:
               ignore_init_summary: true
-            preload_modules: [matchbox]
+            preload_modules: [griffonner]
             docstring_style: google
             docstring_section_style: list
             heading_level: 2

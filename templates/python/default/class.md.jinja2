@@ -1,0 +1,93 @@
+# {{ obj.name }}
+
+{% if obj.bases %}
+**Inherits from:** {{ obj.bases | join(', ') }}
+{% endif %}
+
+{% if obj.docstring -%}
+{{ obj.docstring.description }}
+{% endif %}
+
+## Class Definition
+
+```python
+class {{ obj.name }}{% if obj.bases %}({{ obj.bases | join(', ') }}){% endif %}:
+{% if obj.docstring %}    """{{ obj.docstring.summary }}"""{% endif %}
+    ...
+```
+
+{% if obj.attributes %}
+## Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+{% for attr in obj.attributes.values() -%}
+| `{{ attr.name }}` | {{ attr.annotation if attr.annotation else "Any" }} | {{ attr.docstring.summary if attr.docstring else "No description" }} |
+{% endfor %}
+{% endif %}
+
+{% if obj.methods %}
+## Methods
+
+{% for method in obj.methods.values() %}
+### {{ method.name }}
+
+{% if method.docstring -%}
+{{ method.docstring.summary }}
+{% endif %}
+
+```python
+{{ method.signature }}
+```
+
+{% if method.docstring and method.docstring.description != method.docstring.summary -%}
+{{ method.docstring.description }}
+
+{% if method.docstring.parameters %}
+**Parameters:**
+
+{% for param in method.docstring.parameters %}
+- `{{ param.name }}`: {{ param.description }}
+{% endfor %}
+{% endif %}
+
+{% if method.docstring.returns %}
+**Returns:**
+
+{{ method.docstring.returns.description }}
+{% endif %}
+
+{% if method.docstring.raises %}
+**Raises:**
+
+{% for exc in method.docstring.raises %}
+- `{{ exc.annotation }}`: {{ exc.description }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if obj.properties %}
+## Properties
+
+{% for prop in obj.properties.values() %}
+### {{ prop.name }}
+
+{% if prop.docstring -%}
+{{ prop.docstring.summary }}
+{% endif %}
+
+```python
+@property
+def {{ prop.name }}(self) -> {{ prop.annotation if prop.annotation else "Any" }}:
+    ...
+```
+
+{% if prop.docstring and prop.docstring.description != prop.docstring.summary -%}
+{{ prop.docstring.description }}
+{% endif %}
+
+{% endfor %}
+{% endif %}
