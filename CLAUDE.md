@@ -13,8 +13,9 @@ Griffonner is a template-first Python documentation generator that gets out of y
 This project uses `uv` for dependency management and `just` for task running:
 
 - `uv sync` - Install development dependencies
-- `just format` - Format and lint code using ruff and mypy
-- `just test` - Run tests with pytest
+- `just format` - Format and lint code using ruff and mypy (uses `uv run mypy`)
+- `just test` - Run tests with pytest (uses `uv run pytest`)
+- `uv run pytest` - Run tests directly with pytest
 - `just docs` - Run local documentation development server
 - `just build` - Build documentation and package
 - `just clean` - Clean build artifacts

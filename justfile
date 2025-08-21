@@ -6,11 +6,11 @@ install:
 format:
     uvx ruff check src/ --fix
     uvx ruff format src/
-    uvx mypy src/
+    uv run mypy src/
 
 # Run tests
 test:
-    uvx pytest
+    uv run pytest
 
 # Clean build artifacts
 clean:
