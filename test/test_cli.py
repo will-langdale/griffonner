@@ -113,7 +113,7 @@ Content.
             ])
             
             assert result.exit_code == 1
-            assert "❌ Generation failed:" in result.stderr
+            assert "❌ Generation failed:" in result.output
     
     def test_generate_with_default_output_dir(self):
         """Tests generate command with default output directory."""
@@ -261,7 +261,7 @@ class TestWatchCommand:
             ])
             
             assert result.exit_code == 1
-            assert "❌ Watch mode not yet implemented" in result.stderr
+            assert "❌ Watch mode not yet implemented" in result.output
 
 
 class TestCLIIntegration:

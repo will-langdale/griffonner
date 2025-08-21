@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import List, Optional, Union
 
 import griffe
 from griffe import Alias
@@ -17,8 +18,8 @@ class ModuleLoadError(GriffeError):
 
 
 def load_griffe_object(
-    target: str, search_paths: list[Path] | None = None
-) -> GriffeObject | Alias:
+    target: str, search_paths: Optional[List[Path]] = None
+) -> Union[GriffeObject, Alias]:
     """Load a Griffe object from module name.
 
     Args:

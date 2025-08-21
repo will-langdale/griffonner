@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -29,9 +29,9 @@ class FrontmatterConfig(BaseModel):
     """Configuration parsed from frontmatter."""
 
     template: str
-    output: list[OutputItem]
+    output: List[OutputItem]
     griffe_options: GriffeOptions = Field(default_factory=GriffeOptions)
-    custom_vars: dict[str, Any] = Field(default_factory=dict)
+    custom_vars: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("template")
     @classmethod
@@ -97,7 +97,7 @@ def parse_frontmatter_file(file_path: Path) -> ParsedFile:
     )
 
 
-def find_frontmatter_files(directory: Path) -> list[Path]:
+def find_frontmatter_files(directory: Path) -> List[Path]:
     """Find all files with frontmatter in a directory.
 
     Args:

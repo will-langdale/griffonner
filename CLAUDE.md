@@ -24,7 +24,7 @@ This project uses `uv` for dependency management and `just` for task running:
 ## Code style and standards
 
 **Python requirements**:
-- Python 3.11+ with modern typing (`list[str] | None`, not `Optional[List[str]]`)
+- Python 3.9+ with typing (`from typing import List, Dict, Optional, Union` - no built-in generic types)
 - Google docstring style
 - Use Pydantic over dataclasses
 - Use Typer for CLI implementation

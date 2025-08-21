@@ -1,9 +1,9 @@
 """Typer-based CLI for Griffonner."""
 
 from pathlib import Path
+from typing import Annotated, List, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from .core import generate
 from .templates import TemplateLoader
@@ -24,7 +24,7 @@ def generate_cmd(
         Path, typer.Option("--output", "-o", help="Output directory")
     ] = Path("docs/output"),
     template_dirs: Annotated[
-        list[Path] | None,
+        Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
     ] = None,
 ) -> None:
@@ -46,7 +46,7 @@ def generate_cmd(
 @app.command()
 def templates(
     template_dirs: Annotated[
-        list[Path] | None,
+        Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Template directories to search"),
     ] = None,
     pattern: Annotated[

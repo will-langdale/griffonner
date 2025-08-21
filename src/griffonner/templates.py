@@ -1,7 +1,7 @@
 """Template discovery and loading for Griffonner."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import jinja2
 
@@ -17,7 +17,7 @@ class TemplateNotFoundError(TemplateError):
 class TemplateLoader:
     """Handles template discovery and loading."""
 
-    def __init__(self, template_dirs: list[Path] | None = None) -> None:
+    def __init__(self, template_dirs: Optional[List[Path]] = None) -> None:
         """Initialize the template loader.
 
         Args:
@@ -60,7 +60,7 @@ class TemplateLoader:
         except jinja2.TemplateNotFound as e:
             raise TemplateNotFoundError(f"Template not found: {template_path}") from e
 
-    def render_template(self, template_path: str, context: dict[str, Any]) -> str:
+    def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """Render a template with the given context.
 
         Args:
@@ -80,7 +80,7 @@ class TemplateLoader:
         except jinja2.TemplateError as e:
             raise TemplateError(f"Template rendering failed: {e}") from e
 
-    def find_templates(self, pattern: str = "**/*.jinja2") -> list[Path]:
+    def find_templates(self, pattern: str = "**/*.jinja2") -> List[Path]:
         """Find all templates matching a pattern.
 
         Args:
