@@ -116,11 +116,11 @@ custom_vars:
 - [x] Basic CLI with Typer
 - [x] File generation
 
-**Phase 2 (Usability)** - Planned:
-- [ ] Template discovery
-- [ ] Watch mode
-- [ ] Error handling
-- [ ] Documentation
+**Phase 2 (Usability)** - ✅ Complete:
+- [x] Template discovery
+- [x] Watch mode
+- [x] Error handling
+- [x] Documentation
 
 **Phase 3 (Ecosystem)** - Future:
 - [ ] Plugin system

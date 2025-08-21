@@ -165,9 +165,48 @@ griffonner generate docs/pages/ --output docs/output
 griffonner generate docs/pages/api.md --output docs/output
 
 # List available templates
-griffonner templates --template-dir docs/templates
+griffonner templates
 
-# Watch mode (Phase 2 - not implemented yet)
+# Validate template syntax
+griffonner validate python/default/module.md.jinja2
+
+# Watch mode - live reload during development
 griffonner watch docs/pages/ --output docs/output
+```
+
+### Watch mode
+
+Watch mode provides live reload functionality for development workflows:
+
+```shell
+# Start watching a directory
+griffonner watch docs/pages/
+
+# Watch with custom output directory  
+griffonner watch docs/pages/ --output docs/generated
+
+# Watch with additional template directories
+griffonner watch docs/pages/ --template-dir custom-templates/
+```
+
+When files with frontmatter are modified, Griffonner automatically regenerates the corresponding output files.
+
+### Template discovery
+
+Griffonner automatically searches for templates in these locations:
+
+1. `docs/templates/` (project templates)
+2. `templates/` (current directory)  
+3. Built-in templates (shipped with Griffonner)
+
+```shell
+# List all available templates
+griffonner templates
+
+# Search for specific patterns
+griffonner templates --pattern "**/*class*"
+
+# Include custom template directories
+griffonner templates --template-dir custom-templates/
 ```
 
