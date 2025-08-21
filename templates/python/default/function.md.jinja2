@@ -1,0 +1,57 @@
+# {{ obj.name }}
+
+{% if obj.docstring -%}
+{{ obj.docstring.summary }}
+{% endif %}
+
+## Function Signature
+
+```python
+{{ obj.signature }}
+```
+
+{% if obj.docstring and obj.docstring.description != obj.docstring.summary -%}
+## Description
+
+{{ obj.docstring.description }}
+{% endif %}
+
+{% if obj.docstring and obj.docstring.parameters %}
+## Parameters
+
+{% for param in obj.docstring.parameters %}
+### {{ param.name }}
+
+**Type:** {{ param.annotation if param.annotation else "Any" }}
+
+{{ param.description }}
+{% endfor %}
+{% endif %}
+
+{% if obj.docstring and obj.docstring.returns %}
+## Returns
+
+**Type:** {{ obj.docstring.returns.annotation if obj.docstring.returns.annotation else "Any" }}
+
+{{ obj.docstring.returns.description }}
+{% endif %}
+
+{% if obj.docstring and obj.docstring.raises %}
+## Raises
+
+{% for exc in obj.docstring.raises %}
+### {{ exc.annotation }}
+
+{{ exc.description }}
+{% endfor %}
+{% endif %}
+
+{% if obj.docstring and obj.docstring.examples %}
+## Examples
+
+{% for example in obj.docstring.examples %}
+```python
+{{ example.description }}
+```
+{% endfor %}
+{% endif %}

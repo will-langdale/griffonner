@@ -93,14 +93,32 @@ def generate_directory(
     source_files = find_frontmatter_files(pages_dir)
 
     if not source_files:
-        raise GenerationError(f"No frontmatter files found in {pages_dir}")
+        error_msg = f"No frontmatter files found in {pages_dir}"
+        error_msg += "\n\nLooking for markdown files (.md) that start with:"
+        error_msg += "\n---"
+        error_msg += '\ntemplate: "python/default/module.md.jinja2"'
+        error_msg += "\noutput:"
+        error_msg += '\n  filename: "api.md"'
+        error_msg += '\n  griffe_target: "mypackage.module"'
+        error_msg += "\n---"
+        raise GenerationError(error_msg)
 
     all_generated = []
+    errors = []
 
-    # Generate each file
+    # Generate each file, collecting errors
     for source_file in source_files:
-        generated = generate_file(source_file, output_dir, template_dirs)
-        all_generated.extend(generated)
+        try:
+            generated = generate_file(source_file, output_dir, template_dirs)
+            all_generated.extend(generated)
+        except Exception as e:
+            errors.append(f"Failed to generate {source_file}: {e}")
+
+    # If there were errors, include summary
+    if errors:
+        error_msg = f"Generation completed with {len(errors)} errors:\n"
+        error_msg += "\n".join(f"  - {err}" for err in errors)
+        raise GenerationError(error_msg)
 
     return all_generated
 

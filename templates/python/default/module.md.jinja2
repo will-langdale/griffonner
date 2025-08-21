@@ -1,0 +1,81 @@
+# {{ obj.name }}
+
+{% if obj.docstring -%}
+{{ obj.docstring.description }}
+{% endif %}
+
+{% if obj.classes %}
+## Classes
+
+{% for class_obj in obj.classes.values() %}
+### {{ class_obj.name }}
+
+{% if class_obj.docstring -%}
+{{ class_obj.docstring.summary }}
+{% endif %}
+
+```python
+class {{ class_obj.name }}{% if class_obj.bases %}({{ class_obj.bases | join(', ') }}){% endif %}
+```
+
+{% if class_obj.docstring and class_obj.docstring.description != class_obj.docstring.summary -%}
+{{ class_obj.docstring.description }}
+{% endif %}
+
+{% if class_obj.methods %}
+#### Methods
+
+| Method | Description |
+|--------|-------------|
+{% for method in class_obj.methods.values() -%}
+| `{{ method.name }}` | {{ method.docstring.summary if method.docstring else "No description" }} |
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if obj.functions %}
+## Functions
+
+{% for func in obj.functions.values() %}
+### {{ func.name }}
+
+{% if func.docstring -%}
+{{ func.docstring.summary }}
+{% endif %}
+
+```python
+{{ func.signature }}
+```
+
+{% if func.docstring and func.docstring.description != func.docstring.summary -%}
+{{ func.docstring.description }}
+
+{% if func.docstring.parameters %}
+**Parameters:**
+
+{% for param in func.docstring.parameters %}
+- `{{ param.name }}`: {{ param.description }}
+{% endfor %}
+{% endif %}
+
+{% if func.docstring.returns %}
+**Returns:**
+
+{{ func.docstring.returns.description }}
+{% endif %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if obj.attributes %}
+## Attributes
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+{% for attr in obj.attributes.values() -%}
+| `{{ attr.name }}` | {{ attr.annotation if attr.annotation else "Any" }} | {{ attr.docstring.summary if attr.docstring else "No description" }} |
+{% endfor %}
+{% endif %}

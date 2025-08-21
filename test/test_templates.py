@@ -8,6 +8,7 @@ from griffonner.templates import (
     TemplateError,
     TemplateLoader,
     TemplateNotFoundError,
+    TemplateValidationError,
 )
 
 
@@ -258,3 +259,171 @@ Functions:
             
             # Should not be escaped since autoescape=False
             assert result == "<b>test</b>"
+
+
+class TestTemplateDiscovery:
+    """Tests for enhanced template discovery (Phase 2)."""
+
+    def test_find_default_template(self):
+        """Test finding default templates by object kind."""
+        loader = TemplateLoader()
+        
+        # Should find built-in templates
+        module_template = loader.find_default_template("module")
+        assert module_template == "python/default/module.md.jinja2"
+        
+        class_template = loader.find_default_template("class")
+        assert class_template == "python/default/class.md.jinja2"
+        
+        function_template = loader.find_default_template("function")
+        assert function_template == "python/default/function.md.jinja2"
+
+    def test_find_default_template_nonexistent(self):
+        """Test finding nonexistent default template."""
+        loader = TemplateLoader()
+        
+        result = loader.find_default_template("nonexistent")
+        assert result is None
+
+    def test_get_available_template_sets(self):
+        """Test getting available template sets."""
+        loader = TemplateLoader()
+        
+        template_sets = loader.get_available_template_sets()
+        assert "python/default" in template_sets
+
+    def test_suggest_template(self):
+        """Test template suggestion functionality."""
+        loader = TemplateLoader()
+        
+        # Should suggest similar templates
+        suggestions = loader.suggest_template("python/default/missing.md.jinja2")
+        assert len(suggestions) > 0
+        
+        # Should find templates with similar names
+        suggestions = loader.suggest_template("module.md.jinja2")
+        assert any("module.md.jinja2" in s for s in suggestions)
+
+
+class TestTemplateValidation:
+    """Tests for template validation (Phase 2)."""
+
+    def test_validate_valid_template(self):
+        """Test validating a valid template."""
+        loader = TemplateLoader()
+        
+        # Should not raise for valid built-in template
+        loader.validate_template("python/default/module.md.jinja2")
+
+    def test_validate_invalid_template(self):
+        """Test validating an invalid template."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            
+            # Create invalid template
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+            template_file = template_dir / "invalid.jinja2"
+            template_file.write_text("{{ unclosed")
+            
+            loader = TemplateLoader([template_dir])
+            
+            with pytest.raises(TemplateValidationError):
+                loader.validate_template("invalid.jinja2")
+
+    def test_validate_nonexistent_template(self):
+        """Test validating nonexistent template."""
+        loader = TemplateLoader()
+        
+        with pytest.raises(TemplateNotFoundError):
+            loader.validate_template("nonexistent.jinja2")
+
+
+class TestEnhancedErrorHandling:
+    """Tests for enhanced error messages (Phase 2)."""
+
+    def test_template_not_found_with_suggestions(self):
+        """Test that template not found errors include helpful suggestions."""
+        loader = TemplateLoader()
+        
+        with pytest.raises(TemplateNotFoundError) as exc_info:
+            loader.load_template("python/default/missing.md.jinja2")
+        
+        error_msg = str(exc_info.value)
+        assert "Template not found" in error_msg
+        assert "Did you mean one of these?" in error_msg
+        assert "Available template sets:" in error_msg
+
+    def test_template_not_found_shows_available_sets(self):
+        """Test that error shows available template sets."""
+        loader = TemplateLoader()
+        
+        with pytest.raises(TemplateNotFoundError) as exc_info:
+            loader.load_template("nonexistent/template.jinja2")
+        
+        error_msg = str(exc_info.value)
+        assert "python/default/" in error_msg
+
+
+class TestBuiltInTemplates:
+    """Tests for built-in templates (Phase 2)."""
+
+    def test_built_in_templates_exist(self):
+        """Test that built-in templates exist and can be loaded."""
+        loader = TemplateLoader()
+        
+        # Test all built-in templates can be loaded
+        templates = ["module.md.jinja2", "class.md.jinja2", "function.md.jinja2"]
+        for template_name in templates:
+            template_path = f"python/default/{template_name}"
+            template = loader.load_template(template_path)
+            assert template is not None
+
+    def test_built_in_template_rendering(self):
+        """Test that built-in templates can render basic context."""
+        loader = TemplateLoader()
+        
+        # Create mock Griffe object
+        class MockObj:
+            def __init__(self):
+                self.name = "TestModule"
+                self.docstring = None
+                self.functions = {}
+                self.classes = {}
+                self.attributes = {}
+        
+        context = {"obj": MockObj(), "custom_vars": {}}
+        
+        # Should render without errors
+        result = loader.render_template("python/default/module.md.jinja2", context)
+        assert "TestModule" in result
+        assert isinstance(result, str)
+
+    def test_template_discovery_includes_built_in(self):
+        """Test that template discovery includes built-in templates."""
+        loader = TemplateLoader()
+        
+        templates = loader.find_templates()
+        
+        # Should find built-in templates
+        built_in_templates = [
+            "python/default/module.md.jinja2",
+            "python/default/class.md.jinja2", 
+            "python/default/function.md.jinja2"
+        ]
+        
+        for template_path in built_in_templates:
+            found_templates = [str(t) for t in templates]
+            assert template_path in found_templates
+
+    def test_built_in_templates_directory_structure(self):
+        """Test that built-in templates follow expected directory structure."""
+        loader = TemplateLoader()
+        
+        # Check that built-in template directory exists
+        package_templates = Path(__file__).parent.parent / "templates"
+        assert package_templates in loader.template_dirs
+        
+        # Template sets should include python/default
+        template_sets = loader.get_available_template_sets()
+        assert "python/default" in template_sets

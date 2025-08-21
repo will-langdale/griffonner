@@ -2,7 +2,7 @@
 
 Template-first Python documentation generator that gets out of your way.
 
-> *From French "griffonner" (to scribble/draft) - because Griffe finds it, you sketch it out*
+> *From French "griffonner" (to scribble/draft) - because [Griffe](https://mkdocstrings.github.io/griffe/) finds it, you sketch it out*
 
 ## Overview
 

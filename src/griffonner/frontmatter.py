@@ -73,22 +73,51 @@ def parse_frontmatter_file(file_path: Path) -> ParsedFile:
     match = re.match(pattern, content, re.DOTALL)
 
     if not match:
-        raise ValueError(f"No valid frontmatter found in {file_path}")
+        error_msg = f"No valid frontmatter found in {file_path}"
+        if content.strip():
+            if content.startswith("---"):
+                error_msg += "\n\nThe file starts with '---' but the frontmatter "
+                error_msg += "format is invalid."
+                error_msg += "\n\nExpected format:\n"
+                error_msg += "---\n"
+                error_msg += 'template: "python/default/module.md.jinja2"\n'
+                error_msg += "output:\n"
+                error_msg += '  filename: "api.md"\n'
+                error_msg += '  griffe_target: "mypackage.module"\n'
+                error_msg += "---\n"
+            else:
+                error_msg += "\n\nThe file should start with YAML frontmatter "
+                error_msg += "enclosed in '---' delimiters."
+        else:
+            error_msg += "\n\nThe file is empty. Please add frontmatter and content."
+        raise ValueError(error_msg)
 
     frontmatter_yaml, body_content = match.groups()
 
     try:
         frontmatter_data = yaml.safe_load(frontmatter_yaml)
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML in frontmatter: {e}") from e
+        error_msg = f"Invalid YAML in frontmatter: {e}"
+        error_msg += f"\n\nIn file: {file_path}"
+        error_msg += "\n\nPlease check the YAML syntax in your frontmatter section."
+        raise ValueError(error_msg) from e
 
     if not isinstance(frontmatter_data, dict):
-        raise ValueError("Frontmatter must be a YAML mapping")
+        error_msg = "Frontmatter must be a YAML mapping (key-value pairs)"
+        error_msg += f"\n\nIn file: {file_path}"
+        error_msg += "\n\nFound type: " + type(frontmatter_data).__name__
+        raise ValueError(error_msg)
 
     try:
         frontmatter_config = FrontmatterConfig.model_validate(frontmatter_data)
     except Exception as e:
-        raise ValueError(f"Invalid frontmatter configuration: {e}") from e
+        error_msg = f"Invalid frontmatter configuration: {e}"
+        error_msg += f"\n\nIn file: {file_path}"
+        error_msg += "\n\nRequired fields:"
+        error_msg += "\n  - template: Template path "
+        error_msg += "(e.g., 'python/default/module.md.jinja2')"
+        error_msg += "\n  - output: List with filename and griffe_target"
+        raise ValueError(error_msg) from e
 
     return ParsedFile(
         frontmatter=frontmatter_config,

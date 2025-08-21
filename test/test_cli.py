@@ -184,10 +184,14 @@ class TestTemplatesCommand:
             ])
             
             assert result.exit_code == 0
-            assert "📋 Found 3 templates:" in result.stdout
+            # Built-in templates are also found, so count will be higher than 3
+            assert "📋 Found" in result.stdout
+            assert "templates:" in result.stdout
             assert "simple.md.jinja2" in result.stdout
             assert "complex.html.jinja2" in result.stdout
             assert "python/module.md.jinja2" in result.stdout
+            # Should also find built-in templates
+            assert "python/default/module.md.jinja2" in result.stdout
     
     def test_templates_list_with_pattern(self):
         """Tests template listing with custom pattern."""
@@ -227,7 +231,9 @@ class TestTemplatesCommand:
             ])
             
             assert result.exit_code == 0
-            assert "No templates found" in result.stdout
+            # Built-in templates will still be found, so we should see them
+            assert "📋 Found" in result.stdout
+            assert "python/default/module.md.jinja2" in result.stdout
     
     def test_templates_list_error(self):
         """Tests error handling in templates command."""
@@ -239,29 +245,53 @@ class TestTemplatesCommand:
         ])
         
         assert result.exit_code == 0
-        assert "No templates found" in result.stdout
+        # Built-in templates will still be found
+        assert "📋 Found" in result.stdout
+
+
+class TestValidateCommand:
+    """Tests for validate command."""
+    
+    def test_validate_success(self):
+        """Tests successful template validation."""
+        result = runner.invoke(app, [
+            "validate",
+            "python/default/module.md.jinja2"
+        ])
+        
+        assert result.exit_code == 0
+        assert "✅ Template is valid:" in result.stdout
+    
+    def test_validate_nonexistent_template(self):
+        """Tests validation of nonexistent template."""
+        result = runner.invoke(app, [
+            "validate",
+            "nonexistent/template.jinja2"
+        ])
+        
+        assert result.exit_code == 1
+        assert "❌ Validation error:" in result.output
 
 
 class TestWatchCommand:
-    """Tests for watch command (Phase 2 - not implemented)."""
+    """Tests for watch command."""
     
-    def test_watch_not_implemented(self):
-        """Tests that watch command returns not implemented error."""
+    def test_watch_nonexistent_directory(self):
+        """Tests watch command with nonexistent directory."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
-            pages_dir = temp_path / "pages"
-            pages_dir.mkdir()
+            nonexistent_dir = temp_path / "nonexistent"
             output_dir = temp_path / "output"
             
             result = runner.invoke(app, [
                 "watch",
-                str(pages_dir),
+                str(nonexistent_dir),
                 "--output", str(output_dir)
             ])
             
             assert result.exit_code == 1
-            assert "❌ Watch mode not yet implemented" in result.output
+            assert "❌ Watch failed:" in result.output
 
 
 class TestCLIIntegration:
@@ -275,6 +305,7 @@ class TestCLIIntegration:
         assert "Template-first Python documentation generator" in result.stdout
         assert "generate" in result.stdout
         assert "templates" in result.stdout
+        assert "validate" in result.stdout
         assert "watch" in result.stdout
     
     def test_command_help_messages(self):
@@ -288,6 +319,11 @@ class TestCLIIntegration:
         result = runner.invoke(app, ["templates", "--help"])
         assert result.exit_code == 0
         assert "List available templates" in result.stdout
+        
+        # Test validate help
+        result = runner.invoke(app, ["validate", "--help"])
+        assert result.exit_code == 0
+        assert "Validate template syntax" in result.stdout
         
         # Test watch help
         result = runner.invoke(app, ["watch", "--help"])
