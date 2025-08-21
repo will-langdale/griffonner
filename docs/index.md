@@ -170,3 +170,4 @@ griffonner templates --template-dir docs/templates
 # Watch mode (Phase 2 - not implemented yet)
 griffonner watch docs/pages/ --output docs/output
 ```
+
