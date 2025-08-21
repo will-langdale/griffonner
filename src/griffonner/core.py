@@ -1,6 +1,7 @@
 """Main generation logic for Griffonner."""
 
 from pathlib import Path
+from typing import List, Optional
 
 from .frontmatter import find_frontmatter_files, parse_frontmatter_file
 from .griffe_wrapper import load_griffe_object
@@ -12,8 +13,8 @@ class GenerationError(Exception):
 
 
 def generate_file(
-    source_file: Path, output_dir: Path, template_dirs: list[Path] | None = None
-) -> list[Path]:
+    source_file: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+) -> List[Path]:
     """Generate documentation files from a source file with frontmatter.
 
     Args:
@@ -73,8 +74,8 @@ def generate_file(
 
 
 def generate_directory(
-    pages_dir: Path, output_dir: Path, template_dirs: list[Path] | None = None
-) -> list[Path]:
+    pages_dir: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+) -> List[Path]:
     """Generate documentation from all files in a directory.
 
     Args:
@@ -105,8 +106,8 @@ def generate_directory(
 
 
 def generate(
-    source: Path, output_dir: Path, template_dirs: list[Path] | None = None
-) -> list[Path]:
+    source: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+) -> List[Path]:
     """Generate documentation from a file or directory.
 
     Args:
