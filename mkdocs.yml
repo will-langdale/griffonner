@@ -4,19 +4,27 @@ repo_url: "https://github.com/will-langdale/griffonner"
 repo_name: "will-langdale/griffonner"
 
 nav:
-- Home:
-  - Welcome: index.md
-  - Getting started: getting-started.md
+- Home: index.md
 - User guide:
-  - CLI reference: cli-reference.md
-  - Watch mode: watch-mode.md
+  - Getting started: home/getting-started.md
+  - Frontmatter reference: user-guide/frontmatter-reference.md
+  - CLI reference: user-guide/cli-reference.md
+  - Watch mode: user-guide/watch-mode.md
+- Plugins:
+  - Using processors: plugins/using-processors.md
+  - Using filters: plugins/using-filters.md
+  - Managing plugins: plugins/managing-plugins.md
 - Templates:
-  - Template development: templates.md
-  - Template reference: template-reference.md
-- Reference:
-  - API documentation: api.md
+  - Overview: template-guides/index.md
+  - Template development: template-guides/template-development.md
+  - Template reference: template-guides/template-reference.md
+  - AI template guide: template-guides/ai-template-guide.md
 - Development:
-  - AI instructions: ai.md
+  - Plugin development: development/plugin-development.md
+  - Bundle development: development/bundle-development.md
+  - AI bundle creation: development/ai-bundle-creation.md
+- Reference:
+  - API documentation: reference/api.md
 
 theme:
   name: material

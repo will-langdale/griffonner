@@ -6,6 +6,7 @@ from typing import Annotated, List, Optional
 import typer
 
 from .core import generate
+from .plugins.manager import PluginManager
 from .templates import TemplateLoader, TemplateValidationError
 from .watcher import DocumentationWatcher
 
@@ -120,6 +121,76 @@ def watch(
         pass
     except Exception as e:
         typer.echo(f"❌ Watch failed: {e}", err=True)
+        raise typer.Exit(1) from e
+
+
+@app.command("plugins")
+def plugins_cmd() -> None:
+    """List all available plugins (processors, filters, bundles)."""
+    try:
+        plugin_manager = PluginManager()
+        plugins = plugin_manager.list_plugins()
+
+        if not any(plugins.values()):
+            typer.echo("No plugins found")
+            return
+
+        typer.echo("🔌 Available plugins:")
+
+        if plugins["processors"]:
+            typer.echo("\n📋 Processors:")
+            for processor in plugins["processors"]:
+                typer.echo(f"  - {processor}")
+
+        if plugins["filters"]:
+            typer.echo("\n🔧 Filters:")
+            for filter_name in plugins["filters"]:
+                typer.echo(f"  - {filter_name}")
+
+        if plugins["bundles"]:
+            typer.echo("\n📦 Bundles:")
+            for bundle in plugins["bundles"]:
+                typer.echo(f"  - {bundle}")
+
+    except Exception as e:
+        typer.echo(f"❌ Failed to list plugins: {e}", err=True)
+        raise typer.Exit(1) from e
+
+
+@app.command("bundle")
+def bundle_info_cmd(
+    bundle_name: Annotated[str, typer.Argument(help="Bundle name to inspect")],
+) -> None:
+    """Show detailed information about a specific bundle."""
+    try:
+        plugin_manager = PluginManager()
+        bundle_info = plugin_manager.get_bundle_info(bundle_name)
+
+        if not bundle_info:
+            typer.echo(f"❌ Bundle not found: {bundle_name}")
+            raise typer.Exit(1)
+
+        typer.echo(f"📦 Bundle: {bundle_info['name']}")
+        typer.echo(f"   Version: {bundle_info['version']}")
+        typer.echo(f"   Description: {bundle_info['description']}")
+
+        if bundle_info["processors"]:
+            typer.echo("\n   📋 Processors:")
+            for processor in bundle_info["processors"]:
+                typer.echo(f"     - {processor}")
+
+        if bundle_info["filters"]:
+            typer.echo("\n   🔧 Filters:")
+            for filter_name in bundle_info["filters"]:
+                typer.echo(f"     - {filter_name}")
+
+        if bundle_info["template_paths"]:
+            typer.echo("\n   📄 Template paths:")
+            for template_path in bundle_info["template_paths"]:
+                typer.echo(f"     - {template_path}")
+
+    except Exception as e:
+        typer.echo(f"❌ Failed to get bundle info: {e}", err=True)
         raise typer.Exit(1) from e
 
 

@@ -527,6 +527,6 @@ Handle missing or optional information:
 
 ## Next steps
 
-- Learn about [template development](templates.md)
-- Check the [CLI reference](cli-reference.md) for validation
-- See [watch mode](watch-mode.md) for template development workflow
+- Learn about [template development](template-development.md)
+- Check the [CLI reference](../user-guide/cli-reference.md) for validation
+- See [watch mode](../user-guide/watch-mode.md) for template development workflow

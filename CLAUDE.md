@@ -48,9 +48,9 @@ def test_something(foo: bool, bar: int):
 - British English
 - Sentence case for titles
 
-## Planned architecture
+## Architecture
 
-**Target package structure**:
+**Current package structure**:
 ```
 src/griffonner/
 ├── cli.py              # Typer-based CLI
@@ -58,7 +58,12 @@ src/griffonner/
 ├── frontmatter.py      # YAML frontmatter parsing
 ├── templates.py        # Template discovery & loading
 ├── griffe_wrapper.py   # Griffe integration
-└── plugins/            # Plugin system
+├── watcher.py          # Watch mode implementation
+└── plugins/            # Plugin system (Phase 3)
+    ├── __init__.py
+    ├── protocols.py    # Plugin interface definitions
+    ├── base.py         # Base classes for plugins
+    └── manager.py      # Plugin discovery & management
 ```
 
 **Built-in templates structure**:
@@ -96,6 +101,8 @@ custom_vars:
 - `griffonner generate docs/pages/api.md` - Generate single file
 - `griffonner watch docs/pages/` - Watch mode for development
 - `griffonner templates` - List available templates
+- `griffonner plugins` - List all available plugins
+- `griffonner bundle <name>` - Show details about a specific bundle
 
 ## Design principles
 
@@ -122,8 +129,112 @@ custom_vars:
 - [x] Error handling
 - [x] Documentation
 
-**Phase 3 (Ecosystem)** - Future:
-- [ ] Plugin system
-- [ ] Template sharing
+**Phase 3 (Ecosystem)** - ✅ Complete:
+- [x] Plugin system with processors and filters
+- [x] Template bundle system
+- [x] Entry points discovery
+- [x] CLI plugin management
+
+**Phase 4 (Future)**:
+- [ ] Template sharing marketplace
 - [ ] Performance optimisation
 - [ ] Advanced CLI features
+
+## Plugin System (Phase 3)
+
+Griffonner now supports a comprehensive plugin system that allows extending functionality through:
+
+### Processors
+Middleware components that intercept and transform Griffe objects before templating:
+
+```python
+from griffonner.plugins import BaseProcessor
+
+class MyProcessor(BaseProcessor):
+    @property
+    def name(self) -> str:
+        return "my_processor"
+    
+    @property  
+    def priority(self) -> int:
+        return 75  # Lower = runs earlier
+    
+    def process(self, griffe_obj, context):
+        # Add custom metadata
+        context["my_data"] = analyse_object(griffe_obj)
+        return griffe_obj, context
+```
+
+### Filters
+Custom Jinja2 template filters for data transformation:
+
+```python
+def format_signature(signature_str):
+    """Format function signatures nicely"""
+    return signature_str.replace("(", "(\n    ").replace(", ", ",\n    ")
+
+# Use in templates: {{ func.signature | format_signature }}
+```
+
+### Bundles
+Collections of processors, filters, and templates packaged together:
+
+```python
+from griffonner.plugins import BaseBundle
+
+class GitLabWikiBundle(BaseBundle):
+    @property
+    def name(self) -> str:
+        return "gitlab-wiki"
+    
+    def get_processors(self):
+        return {"sidebar": SidebarProcessor()}
+    
+    def get_filters(self):
+        return {"gitlab_link": format_gitlab_links}
+    
+    def get_template_paths(self):
+        return ["templates/gitlab-wiki/"]
+```
+
+### Entry Points Registration
+Plugins are discovered via setuptools entry points:
+
+```python
+# In setup.py or pyproject.toml
+entry_points={
+    "griffonner.processors": [
+        "my_processor = mypackage:MyProcessor",
+    ],
+    "griffonner.filters": [
+        "format_signature = mypackage.filters:format_signature",
+    ],
+    "griffonner.bundles": [
+        "gitlab-wiki = mypackage:GitLabWikiBundle",
+    ],
+}
+```
+
+### Frontmatter Configuration
+Control processor execution per file:
+
+```yaml
+---
+template: "python/default/module.md.jinja2"
+griffe_target: "mypackage.utils"
+processors:
+  enabled: ["complexity_analyser", "doc_linker"]  # Only run these
+  # OR
+  disabled: ["slow_processor"]  # Run all except these
+  config:
+    complexity_threshold: 10
+output:
+  filename: "api-utils.md"
+---
+```
+
+### Available CLI Commands
+- `griffonner plugins` - List all processors, filters, and bundles
+- `griffonner bundle <name>` - Show bundle details and components
+
+This plugin system enables the creation of community packages like `griffonner-gitlab-wiki` or `griffonner-sphinx-compat` that bundle templates, processors, and filters for specific documentation workflows.

@@ -377,6 +377,6 @@ For CI/CD pipelines:
 
 ## Next steps
 
-- Learn about [template development](templates.md)
+- Learn about [template development](../template-guides/template-development.md)
 - Check the [CLI reference](cli-reference.md) for all options
-- Explore [template customisation](template-reference.md)
+- Explore [template customisation](../template-guides/template-reference.md)
