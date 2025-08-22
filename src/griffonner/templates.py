@@ -1,7 +1,10 @@
 """Template discovery and loading for Griffonner."""
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from .plugins.manager import PluginManager
 
 import jinja2
 
@@ -21,11 +24,16 @@ class TemplateValidationError(TemplateError):
 class TemplateLoader:
     """Handles template discovery and loading."""
 
-    def __init__(self, template_dirs: Optional[List[Path]] = None) -> None:
+    def __init__(
+        self,
+        template_dirs: Optional[List[Path]] = None,
+        plugin_manager: Optional["PluginManager"] = None,
+    ) -> None:
         """Initialize the template loader.
 
         Args:
             template_dirs: Directories to search for templates
+            plugin_manager: Optional plugin manager for custom filters
         """
         if template_dirs is None:
             template_dirs = []
@@ -51,6 +59,12 @@ class TemplateLoader:
             trim_blocks=True,
             lstrip_blocks=True,
         )
+
+        # Register custom filters from plugin manager
+        if plugin_manager:
+            custom_filters = plugin_manager.get_filters()
+            for filter_name, filter_func in custom_filters.items():
+                self.env.filters[filter_name] = filter_func
 
     def load_template(self, template_path: str) -> jinja2.Template:
         """Load a template by path.

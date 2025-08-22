@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -25,6 +25,14 @@ class OutputItem(BaseModel):
     griffe_target: str
 
 
+class ProcessorConfig(BaseModel):
+    """Configuration for processors."""
+
+    enabled: List[str] = Field(default_factory=list)
+    disabled: List[str] = Field(default_factory=list)
+    config: Dict[str, Any] = Field(default_factory=dict)
+
+
 class FrontmatterConfig(BaseModel):
     """Configuration parsed from frontmatter."""
 
@@ -32,6 +40,7 @@ class FrontmatterConfig(BaseModel):
     output: List[OutputItem]
     griffe_options: GriffeOptions = Field(default_factory=GriffeOptions)
     custom_vars: Dict[str, Any] = Field(default_factory=dict)
+    processors: Optional[ProcessorConfig] = Field(default=None)
 
     @field_validator("template")
     @classmethod

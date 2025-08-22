@@ -8,7 +8,7 @@ Template-first Python documentation generator that gets out of your way.
 
 Griffonner uses [Griffe](https://mkdocstrings.github.io/griffe/) to parse Python code and Jinja2 templates to generate documentation in any format. It has zero opinions about output structure - you control everything through templates.
 
-**Core flow**: Python Code → Griffe Parser → Template Engine → Your Output
+**Core flow**: Python Code � Griffe Parser � Template Engine � Your Output
 
 ## Basic example
 
@@ -210,6 +210,3 @@ griffonner templates --pattern "**/*class*"
 griffonner templates --template-dir custom-templates/
 ```
 
-## Get started
-
-Ready to create your first documentation? Check out our [getting started guide](home/getting-started.md) to learn the basics, or explore the [template development](template-guides/template-development.md) guide to create custom templates.

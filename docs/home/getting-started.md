@@ -193,6 +193,6 @@ If Griffe can't import your module:
 
 ## What's next?
 
-- Learn about [template development](templates.md)
-- Explore the [CLI reference](cli-reference.md)
-- Set up [watch mode](watch-mode.md) for development
+- Learn about [template development](../template-guides/template-development.md)
+- Explore the [CLI reference](../user-guide/cli-reference.md)
+- Set up [watch mode](../user-guide/watch-mode.md) for development

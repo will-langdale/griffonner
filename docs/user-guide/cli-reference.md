@@ -153,6 +153,64 @@ griffonner validate --template-dir custom-templates/ my-custom/template.md.jinja
 - Template can be loaded and parsed
 - No undefined variables in template logic
 
+### `plugins`
+
+List installed plugins and their details.
+
+```
+griffonner plugins [OPTIONS]
+```
+
+**Options:**
+
+- `--help` - Show help message
+
+**Examples:**
+
+```shell
+# List all installed plugins
+griffonner plugins
+```
+
+**Output includes:**
+
+- Plugin name and type (processor or filter)
+- Plugin source package
+- Brief description (if available)
+
+### `bundle`
+
+Show information about installed plugin bundles.
+
+```
+griffonner bundle [OPTIONS] [BUNDLE_NAME]
+```
+
+**Arguments:**
+
+- `BUNDLE_NAME` - Name of specific bundle to show (optional)
+
+**Options:**
+
+- `--help` - Show help message
+
+**Examples:**
+
+```shell
+# List all available bundles
+griffonner bundle
+
+# Show details for a specific bundle
+griffonner bundle gitlab-wiki
+```
+
+**Bundle details include:**
+
+- Bundle name, version, and description
+- Included processors and filters
+- Template paths provided by the bundle
+- Example usage
+
 ## Global options
 
 These options are available for all commands:
@@ -239,6 +297,8 @@ Ensure the module is installed and importable
 
 - Use `griffonner templates` to verify template availability
 - Use `griffonner validate` to check template syntax
+- Use `griffonner plugins` to check installed plugins
+- Use `griffonner bundle` to verify bundle components
 - Check file paths are relative to the correct directory
 
 ### Performance
@@ -250,7 +310,9 @@ Ensure the module is installed and importable
 ### Workflow
 
 1. Start with `griffonner templates` to see available options
-2. Create source files with frontmatter
-3. Test with `griffonner generate` for single runs
-4. Use `griffonner watch` for development with live reload
-5. Validate custom templates with `griffonner validate`
+2. Check `griffonner plugins` for installed processors and filters
+3. Use `griffonner bundle` to explore available bundles
+4. Create source files with frontmatter
+5. Test with `griffonner generate` for single runs
+6. Use `griffonner watch` for development with live reload
+7. Validate custom templates with `griffonner validate`

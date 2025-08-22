@@ -5,6 +5,7 @@ from typing import List, Optional
 
 from .frontmatter import find_frontmatter_files, parse_frontmatter_file
 from .griffe_wrapper import load_griffe_object
+from .plugins.manager import PluginManager
 from .templates import TemplateLoader
 
 
@@ -13,7 +14,10 @@ class GenerationError(Exception):
 
 
 def generate_file(
-    source_file: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+    source_file: Path,
+    output_dir: Path,
+    template_dirs: Optional[List[Path]] = None,
+    plugin_manager: Optional[PluginManager] = None,
 ) -> List[Path]:
     """Generate documentation files from a source file with frontmatter.
 
@@ -21,6 +25,7 @@ def generate_file(
         source_file: Path to source file with frontmatter
         output_dir: Base output directory
         template_dirs: Additional template search directories
+        plugin_manager: Optional plugin manager for processors/filters
 
     Returns:
         List of generated output file paths
@@ -36,8 +41,12 @@ def generate_file(
     target_output_dir = output_dir / relative_dir if relative_dir else output_dir
     target_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialize template loader
-    template_loader = TemplateLoader(template_dirs)
+    # Initialize plugin manager if not provided
+    if plugin_manager is None:
+        plugin_manager = PluginManager()
+
+    # Initialize template loader with plugin filters
+    template_loader = TemplateLoader(template_dirs, plugin_manager)
 
     generated_files = []
 
@@ -47,17 +56,45 @@ def generate_file(
             # Load Griffe object for this output
             griffe_obj = load_griffe_object(output_item.griffe_target)
 
-            # Prepare template context
+            # Prepare initial template context
             context = {
                 "obj": griffe_obj,
                 "custom_vars": parsed.frontmatter.custom_vars,
                 "source_content": parsed.content,
                 "source_path": source_file,
+                "processor_config": (
+                    parsed.frontmatter.processors.config
+                    if parsed.frontmatter.processors
+                    else {}
+                ),
             }
+
+            # Determine which processors to use
+            processor_names = None
+            if parsed.frontmatter.processors:
+                if parsed.frontmatter.processors.enabled:
+                    # Use only explicitly enabled processors
+                    processor_names = parsed.frontmatter.processors.enabled
+                elif parsed.frontmatter.processors.disabled:
+                    # Use all processors except disabled ones
+                    all_processors = list(plugin_manager.get_processors().keys())
+                    processor_names = [
+                        p
+                        for p in all_processors
+                        if p not in parsed.frontmatter.processors.disabled
+                    ]
+
+            # Run processors on Griffe object and context
+            processed_obj, processed_context = plugin_manager.process_griffe_object(
+                griffe_obj, context, processor_names
+            )
+
+            # Update context with processed object
+            processed_context["obj"] = processed_obj
 
             # Render template
             rendered_content = template_loader.render_template(
-                parsed.frontmatter.template, context
+                parsed.frontmatter.template, processed_context
             )
 
             # Write output file
@@ -74,7 +111,10 @@ def generate_file(
 
 
 def generate_directory(
-    pages_dir: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+    pages_dir: Path,
+    output_dir: Path,
+    template_dirs: Optional[List[Path]] = None,
+    plugin_manager: Optional[PluginManager] = None,
 ) -> List[Path]:
     """Generate documentation from all files in a directory.
 
@@ -82,6 +122,7 @@ def generate_directory(
         pages_dir: Directory containing source files with frontmatter
         output_dir: Base output directory
         template_dirs: Additional template search directories
+        plugin_manager: Optional plugin manager for processors/filters
 
     Returns:
         List of all generated output file paths
@@ -109,7 +150,9 @@ def generate_directory(
     # Generate each file, collecting errors
     for source_file in source_files:
         try:
-            generated = generate_file(source_file, output_dir, template_dirs)
+            generated = generate_file(
+                source_file, output_dir, template_dirs, plugin_manager
+            )
             all_generated.extend(generated)
         except Exception as e:
             errors.append(f"Failed to generate {source_file}: {e}")
@@ -124,7 +167,10 @@ def generate_directory(
 
 
 def generate(
-    source: Path, output_dir: Path, template_dirs: Optional[List[Path]] = None
+    source: Path,
+    output_dir: Path,
+    template_dirs: Optional[List[Path]] = None,
+    plugin_manager: Optional[PluginManager] = None,
 ) -> List[Path]:
     """Generate documentation from a file or directory.
 
@@ -132,6 +178,7 @@ def generate(
         source: Source file or directory path
         output_dir: Output directory path
         template_dirs: Additional template search directories
+        plugin_manager: Optional plugin manager for processors/filters
 
     Returns:
         List of generated output file paths
@@ -143,8 +190,8 @@ def generate(
         raise GenerationError(f"Source not found: {source}")
 
     if source.is_file():
-        return generate_file(source, output_dir, template_dirs)
+        return generate_file(source, output_dir, template_dirs, plugin_manager)
     elif source.is_dir():
-        return generate_directory(source, output_dir, template_dirs)
+        return generate_directory(source, output_dir, template_dirs, plugin_manager)
     else:
         raise GenerationError(f"Source must be a file or directory: {source}")

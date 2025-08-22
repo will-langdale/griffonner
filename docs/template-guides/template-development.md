@@ -82,7 +82,7 @@ The `obj` context variable is a Griffe object with rich metadata:
 
 ### 2. Working with classes
 
-```jinja2
+````jinja2
 {% for class_obj in obj.classes.values() %}
 # {{ class_obj.name }}
 
@@ -101,11 +101,11 @@ Inherits from: {{ class_obj.bases | join(', ') }}
 ```
 {% endfor %}
 {% endfor %}
-```
+````
 
 ### 3. Working with functions
 
-```jinja2
+````jinja2
 {% for func in obj.functions.values() %}
 # {{ func.name }}
 
@@ -128,7 +128,7 @@ Inherits from: {{ class_obj.bases | join(', ') }}
 {{ func.docstring.returns.description }}
 {% endif %}
 {% endfor %}
-```
+````
 
 ### 4. Using custom variables
 
@@ -405,5 +405,5 @@ Available attrs: {{ obj.__dict__.keys() | list }}
 ## Next steps
 
 - Explore the [template reference](template-reference.md)
-- Learn about [watch mode](watch-mode.md) for development
-- Check the [CLI reference](cli-reference.md) for validation commands
+- Learn about [watch mode](../user-guide/watch-mode.md) for development
+- Check the [CLI reference](../user-guide/cli-reference.md) for validation commands
