@@ -12,7 +12,7 @@ class TestDocumentationWatcher:
     """Tests for DocumentationWatcher."""
 
     def test_init(self):
-        """Test watcher initialization."""
+        """Test watcher initialisation."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             
@@ -77,7 +77,7 @@ class TestGriffonnerEventHandler:
     """Tests for GriffonnerEventHandler."""
 
     def test_init(self):
-        """Test event handler initialization."""
+        """Test event handler initialisation."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             

@@ -66,7 +66,7 @@ class TestPluginManager:
     """Tests for PluginManager class."""
     
     def test_init(self):
-        """Test plugin manager initialization."""
+        """Test plugin manager initialisation."""
         manager = PluginManager()
         
         assert manager._processors == {}

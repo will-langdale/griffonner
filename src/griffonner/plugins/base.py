@@ -101,7 +101,7 @@ class SimpleProcessor(BaseProcessor):
         ],
         priority: int = 100,
     ) -> None:
-        """Initialize a simple processor.
+        """Initialise a simple processor.
 
         Args:
             name: Name of the processor

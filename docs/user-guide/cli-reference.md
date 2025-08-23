@@ -215,6 +215,7 @@ griffonner bundle gitlab-wiki
 
 These options are available for all commands:
 
+- `--verbose, -v` - Enable verbose logging for debugging
 - `--help` - Show help message and exit
 
 ## Exit codes
@@ -295,11 +296,34 @@ Ensure the module is installed and importable
 
 ### Debugging
 
+- Use `--verbose` or `-v` to enable detailed logging for troubleshooting
 - Use `griffonner templates` to verify template availability
 - Use `griffonner validate` to check template syntax
 - Use `griffonner plugins` to check installed plugins
 - Use `griffonner bundle` to verify bundle components
 - Check file paths are relative to the correct directory
+
+**Verbose mode provides detailed information about:**
+
+- Griffe object loading and parsing
+- Template discovery and rendering
+- Plugin loading and processor execution
+- Frontmatter parsing and validation
+- File system operations in watch mode
+- Context preparation and variable resolution
+
+**Examples with verbose mode:**
+
+```shell
+# Debug generation issues
+griffonner generate docs/pages/ --verbose
+
+# Debug template loading
+griffonner templates --verbose
+
+# Debug watch mode
+griffonner watch docs/pages/ --verbose
+```
 
 ### Performance
 
