@@ -6,25 +6,12 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from griffonner.frontmatter import (
     FrontmatterConfig,
-    GriffeOptions,
     OutputItem,
     ParsedFile,
     find_frontmatter_files,
     parse_frontmatter_file,
 )
 
-
-class TestGriffeOptions:
-    """Tests for GriffeOptions model."""
-    
-    def test_default_values(self):
-        """Tests default values are set correctly."""
-        options = GriffeOptions()
-        assert options.include_private is False
-        assert options.show_source is True
-        assert options.docstring_style == "google"
-        assert options.include_inherited is False
-        assert options.load_plugins is True
 
 
 class TestOutputItem:
@@ -70,6 +57,31 @@ class TestFrontmatterConfig:
             output=[OutputItem(filename="test.md", griffe_target="mymodule")]
         )
         assert config.template == "python/default/module.j2"
+    
+    def test_griffe_options_dict(self):
+        """Tests that griffe_options accepts arbitrary dict values."""
+        config = FrontmatterConfig(
+            template="python/default/module.md.jinja2",
+            output=[OutputItem(filename="test.md", griffe_target="mymodule")],
+            griffe_options={
+                "include_private": False,
+                "follow_imports": True,
+                "docstring_style": "sphinx",
+                "custom_option": "custom_value"
+            }
+        )
+        assert config.griffe_options["include_private"] is False
+        assert config.griffe_options["follow_imports"] is True
+        assert config.griffe_options["docstring_style"] == "sphinx"
+        assert config.griffe_options["custom_option"] == "custom_value"
+    
+    def test_griffe_options_default_empty(self):
+        """Tests that griffe_options defaults to empty dict."""
+        config = FrontmatterConfig(
+            template="python/default/module.md.jinja2",
+            output=[OutputItem(filename="test.md", griffe_target="mymodule")]
+        )
+        assert config.griffe_options == {}
 
 
 class TestParseFrontmatterFile:

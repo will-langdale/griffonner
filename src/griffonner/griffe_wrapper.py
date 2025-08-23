@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import griffe
 from griffe import Alias
@@ -18,13 +18,16 @@ class ModuleLoadError(GriffeError):
 
 
 def load_griffe_object(
-    target: str, search_paths: Optional[List[Path]] = None
+    target: str,
+    search_paths: Optional[List[Path]] = None,
+    griffe_options: Optional[Dict[str, Any]] = None,
 ) -> Union[GriffeObject, Alias]:
     """Load a Griffe object from module name.
 
     Args:
         target: Module name (e.g., 'mypackage.utils', 'os', 'pathlib')
         search_paths: Additional paths to search for modules
+        griffe_options: Options to pass to Griffe loader
 
     Returns:
         Raw Griffe object
@@ -34,6 +37,8 @@ def load_griffe_object(
     """
     if search_paths is None:
         search_paths = []
+    if griffe_options is None:
+        griffe_options = {}
 
     # Add current working directory and src to search paths
     default_paths = [Path.cwd(), Path.cwd() / "src"]
@@ -47,6 +52,7 @@ def load_griffe_object(
     try:
         loader = griffe.GriffeLoader(
             search_paths=all_search_paths,
+            **griffe_options,
         )
 
         griffe_obj = loader.load(target)
