@@ -31,6 +31,7 @@ Filters are automatically loaded from installed plugins and used in templates:
 Filters come from Python packages with entry points:
 
 ```shell
+# Example packages (aspirational - not yet available)
 pip install griffonner-formatters
 pip install griffonner-gitlab-wiki
 ```

@@ -182,7 +182,7 @@ def generate_directory(
         error_msg = textwrap.dedent(f"""\
             No frontmatter files found in {pages_dir}
 
-            Looking for markdown files (.md) that start with:
+            Looking for files that start with:
             ---
             template: "python/default/module.md.jinja2"
             output:

@@ -54,12 +54,9 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         file_path = Path(str(event.src_path))
         logger.info(f"File modified: {file_path}")
 
-        # Only process files with frontmatter (markdown files)
-        if file_path.suffix.lower() in [".md", ".markdown"]:
-            logger.info(f"Processing markdown file modification: {file_path}")
-            self._regenerate_file(file_path)
-        else:
-            logger.info(f"Ignoring non-markdown file: {file_path}")
+        # Process all files that might have frontmatter
+        logger.info(f"Processing file modification: {file_path}")
+        self._regenerate_file(file_path)
 
     def on_created(self, event: FileSystemEvent) -> None:
         """Handle file creation events.
@@ -76,12 +73,9 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         file_path = Path(str(event.src_path))
         logger.info(f"File created: {file_path}")
 
-        # Only process files with frontmatter (markdown files)
-        if file_path.suffix.lower() in [".md", ".markdown"]:
-            logger.info(f"Processing markdown file creation: {file_path}")
-            self._regenerate_file(file_path)
-        else:
-            logger.info(f"Ignoring non-markdown file: {file_path}")
+        # Process all files that might have frontmatter
+        logger.info(f"Processing file creation: {file_path}")
+        self._regenerate_file(file_path)
 
     def _regenerate_file(self, file_path: Path) -> None:
         """Regenerate documentation for a single file.

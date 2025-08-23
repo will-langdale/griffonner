@@ -4,9 +4,9 @@ install:
 
 # Format and lint all code (Python + Rust)
 format:
-    uvx ruff check src/ --fix
-    uvx ruff format src/
-    uv run mypy src/
+    uvx ruff check . --fix
+    uvx ruff format .
+    uv run mypy .
 
 # Run tests
 test:

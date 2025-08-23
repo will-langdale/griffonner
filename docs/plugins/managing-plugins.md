@@ -70,7 +70,7 @@ Shows bundle contents:
 Plugins are regular Python packages with entry points configuration. Install via pip:
 
 ```shell
-# Install from PyPI
+# Install from PyPI (example packages - not yet available)
 pip install griffonner-gitlab-wiki
 pip install griffonner-complexity-analyser
 
@@ -272,7 +272,7 @@ Template uses both processors and filters:
 ### Bundle installation workflow
 
 ```shell
-# Install a complete documentation bundle
+# Install a complete documentation bundle (example - not yet available)
 pip install griffonner-gitlab-wiki
 
 # Check what's included
