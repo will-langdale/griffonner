@@ -199,13 +199,15 @@ def find_frontmatter_files(directory: Path) -> List[Path]:
         logger.error(f"Path is not a directory: {directory}")
         raise NotADirectoryError(f"Path is not a directory: {directory}")
 
-    logger.info("Searching for *.md files recursively")
+    logger.info("Searching for all files recursively")
     frontmatter_files = []
-    all_md_files = []
+    all_files = []
     skipped_files = []
 
-    for file_path in directory.rglob("*.md"):
-        all_md_files.append(file_path)
+    for file_path in directory.rglob("*"):
+        if not file_path.is_file():
+            continue
+        all_files.append(file_path)
         try:
             content = file_path.read_text(encoding="utf-8")
             if content.startswith("---\n"):
@@ -219,11 +221,11 @@ def find_frontmatter_files(directory: Path) -> List[Path]:
             skipped_files.append(file_path)
             continue
 
-    md_count = len(all_md_files)
+    total_files_count = len(all_files)
     frontmatter_count = len(frontmatter_files)
     skipped_count = len(skipped_files)
     logger.info(
-        f"Scan: {md_count} .md files, {frontmatter_count} with frontmatter, "
+        f"Scan: {total_files_count} files, {frontmatter_count} with frontmatter, "
         f"{skipped_count} skipped"
     )
     return sorted(frontmatter_files)

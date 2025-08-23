@@ -455,7 +455,7 @@ wiki_format = "griffonner_gitlab_wiki.filters:wiki_format"
 Users install and use the complete bundle:
 
 ```shell
-# Install bundle
+# Install bundle (example - not yet available)
 pip install griffonner-gitlab-wiki
 
 # Check bundle contents
@@ -600,6 +600,7 @@ Complete documentation bundle for generating GitLab wiki-compatible markdown.
 ## Installation
 
 ```shell
+# Example - not yet available
 pip install griffonner-gitlab-wiki
 ```
 

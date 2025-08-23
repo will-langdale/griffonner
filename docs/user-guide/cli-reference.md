@@ -79,7 +79,7 @@ griffonner watch docs/pages/ --template-dir custom-templates/
 
 **Behaviour:**
 
-- Monitors all `.md` and `.markdown` files in the source directory
+- Monitors all files in the source directory for changes
 - Only regenerates files that contain valid frontmatter
 - Automatically creates output directories if they don't exist
 - Shows real-time feedback when files are regenerated
@@ -327,7 +327,7 @@ griffonner watch docs/pages/ --verbose
 
 ### Performance
 
-- Watch mode only monitors files with `.md` or `.markdown` extensions
+- Watch mode monitors all file types but only processes files with valid frontmatter
 - Only files with valid frontmatter are processed
 - Generation is incremental - only changed files are regenerated in watch mode
 

@@ -92,6 +92,7 @@ This shows:
 Processors are distributed as Python packages with entry points:
 
 ```shell
+# Example packages (aspirational - not yet available)
 pip install griffonner-complexity-analyser
 pip install griffonner-doc-linker
 ```
