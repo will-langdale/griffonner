@@ -1,5 +1,6 @@
 """Template discovery and loading for Griffonner."""
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -7,6 +8,8 @@ if TYPE_CHECKING:
     from .plugins.manager import PluginManager
 
 import jinja2
+
+logger = logging.getLogger("griffonner.templates")
 
 
 class TemplateError(Exception):
@@ -29,7 +32,7 @@ class TemplateLoader:
         template_dirs: Optional[List[Path]] = None,
         plugin_manager: Optional["PluginManager"] = None,
     ) -> None:
-        """Initialize the template loader.
+        """Initialise the template loader.
 
         Args:
             template_dirs: Directories to search for templates
@@ -38,8 +41,12 @@ class TemplateLoader:
         if template_dirs is None:
             template_dirs = []
 
+        logger.info("Initialising TemplateLoader")
+        logger.info(f"Template directories provided: {template_dirs}")
+
         # Add built-in template directory (from the package)
         package_templates = Path(__file__).parent.parent.parent / "templates"
+        logger.info(f"Package templates directory: {package_templates}")
 
         # Add default template search paths
         default_dirs = [
@@ -48,10 +55,20 @@ class TemplateLoader:
             package_templates,  # Built-in templates
         ]
 
+        logger.info(f"Default template directories: {default_dirs}")
+
         self.template_dirs = template_dirs + default_dirs
+        logger.info(f"Final template search paths: {self.template_dirs}")
 
         # Create Jinja2 environment with FileSystemLoader
         existing_dirs = [str(d) for d in self.template_dirs if d.exists()]
+        non_existing_dirs = [str(d) for d in self.template_dirs if not d.exists()]
+
+        logger.info(f"Existing template directories: {existing_dirs}")
+        if non_existing_dirs:
+            skipped_dirs = non_existing_dirs
+            logger.info(f"Non-existing template directories (skipped): {skipped_dirs}")
+
         loader = jinja2.FileSystemLoader(existing_dirs)
         self.env = jinja2.Environment(
             loader=loader,
@@ -63,8 +80,13 @@ class TemplateLoader:
         # Register custom filters from plugin manager
         if plugin_manager:
             custom_filters = plugin_manager.get_filters()
+            filter_count = len(custom_filters)
+            logger.info(f"Registering {filter_count} custom filters from plugins")
             for filter_name, filter_func in custom_filters.items():
                 self.env.filters[filter_name] = filter_func
+                logger.info(f"Registered custom filter: {filter_name}")
+        else:
+            logger.info("No plugin manager provided, using default Jinja2 filters only")
 
     def load_template(self, template_path: str) -> jinja2.Template:
         """Load a template by path.
@@ -78,25 +100,35 @@ class TemplateLoader:
         Raises:
             TemplateNotFoundError: If template cannot be found
         """
+        logger.info(f"Loading template: {template_path}")
+
         try:
-            return self.env.get_template(template_path)
+            template = self.env.get_template(template_path)
+            logger.info(f"Successfully loaded template: {template_path}")
+            return template
         except jinja2.TemplateNotFound as e:
+            logger.error(f"Template not found: {template_path}")
+
             # Provide helpful suggestions when template is not found
             suggestions = self.suggest_template(template_path)
-            error_msg = f"Template not found: {template_path}"
+
+            error_parts = [f"Template not found: {template_path}"]
 
             if suggestions:
-                error_msg += "\n\nDid you mean one of these?\n"
+                logger.info(f"Found {len(suggestions)} template suggestions")
+                error_parts.append("\nDid you mean one of these?")
                 for suggestion in suggestions:
-                    error_msg += f"  - {suggestion}\n"
+                    error_parts.append(f"  - {suggestion}")
 
             # Show available template sets
             template_sets = self.get_available_template_sets()
             if template_sets:
-                error_msg += "\nAvailable template sets:\n"
+                logger.info(f"Available template sets: {template_sets}")
+                error_parts.append("\nAvailable template sets:")
                 for template_set in template_sets:
-                    error_msg += f"  - {template_set}/\n"
+                    error_parts.append(f"  - {template_set}/")
 
+            error_msg = "\n".join(error_parts)
             raise TemplateNotFoundError(error_msg) from e
 
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
@@ -113,10 +145,17 @@ class TemplateLoader:
             TemplateNotFoundError: If template cannot be found
             TemplateError: If template rendering fails
         """
+        logger.info(f"Rendering template: {template_path}")
+        logger.info(f"Context keys: {list(context.keys())}")
+
         try:
             template = self.load_template(template_path)
-            return template.render(**context)
+            rendered = template.render(**context)
+            char_count = len(rendered)
+            logger.info(f"Rendered template: {template_path} ({char_count} characters)")
+            return rendered
         except jinja2.TemplateError as e:
+            logger.exception(f"Template rendering failed for {template_path}")
             raise TemplateError(f"Template rendering failed: {e}") from e
 
     def find_templates(self, pattern: str = "**/*.jinja2") -> List[Path]:
@@ -128,17 +167,27 @@ class TemplateLoader:
         Returns:
             List of template paths relative to search directories
         """
+        logger.info(f"Searching for templates with pattern: {pattern}")
         templates = []
 
         for template_dir in self.template_dirs:
             if template_dir.exists():
+                logger.info(f"Searching in directory: {template_dir}")
+                dir_templates = []
                 for template_path in template_dir.glob(pattern):
                     if template_path.is_file():
                         # Make path relative to template directory
                         relative_path = template_path.relative_to(template_dir)
                         templates.append(relative_path)
+                        dir_templates.append(relative_path)
 
-        return sorted(set(templates))  # Remove duplicates and sort
+                logger.info(f"Found {len(dir_templates)} templates in {template_dir}")
+            else:
+                logger.info(f"Directory does not exist: {template_dir}")
+
+        unique_templates = sorted(set(templates))  # Remove duplicates and sort
+        logger.info(f"Total unique templates found: {len(unique_templates)}")
+        return unique_templates
 
     def find_default_template(
         self, object_kind: str, language: str = "python"
@@ -173,14 +222,19 @@ class TemplateLoader:
             TemplateValidationError: If template has syntax errors
             TemplateNotFoundError: If template cannot be found
         """
+        logger.info(f"Validating template: {template_path}")
+
         try:
             template = self.load_template(template_path)
             # Try to parse the template to check for syntax errors
             template.new_context()
+            logger.info(f"Template validation successful: {template_path}")
         except jinja2.TemplateSyntaxError as e:
+            logger.error(f"Template syntax error in {template_path}: {e}")
             msg = f"Template syntax error in {template_path}: {e}"
             raise TemplateValidationError(msg) from e
         except jinja2.TemplateError as e:
+            logger.error(f"Template validation failed for {template_path}: {e}")
             msg = f"Template validation failed for {template_path}: {e}"
             raise TemplateValidationError(msg) from e
 
