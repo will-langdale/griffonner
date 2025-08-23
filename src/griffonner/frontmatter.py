@@ -8,16 +8,6 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
-class GriffeOptions(BaseModel):
-    """Options for Griffe parsing."""
-
-    include_private: bool = False
-    show_source: bool = True
-    docstring_style: str = "google"
-    include_inherited: bool = False
-    load_plugins: bool = True
-
-
 class OutputItem(BaseModel):
     """Single output configuration."""
 
@@ -38,7 +28,7 @@ class FrontmatterConfig(BaseModel):
 
     template: str
     output: List[OutputItem]
-    griffe_options: GriffeOptions = Field(default_factory=GriffeOptions)
+    griffe_options: Dict[str, Any] = Field(default_factory=dict)
     custom_vars: Dict[str, Any] = Field(default_factory=dict)
     processors: Optional[ProcessorConfig] = Field(default=None)
 

@@ -54,7 +54,10 @@ def generate_file(
     for output_item in parsed.frontmatter.output:
         try:
             # Load Griffe object for this output
-            griffe_obj = load_griffe_object(output_item.griffe_target)
+            griffe_obj = load_griffe_object(
+                output_item.griffe_target,
+                griffe_options=parsed.frontmatter.griffe_options,
+            )
 
             # Prepare initial template context
             context = {
