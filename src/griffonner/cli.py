@@ -1,6 +1,7 @@
 """Typer-based CLI for Griffonner."""
 
 import logging
+from importlib.metadata import version
 from pathlib import Path
 from typing import Annotated, List, Optional
 
@@ -12,6 +13,13 @@ from .templates import TemplateLoader, TemplateValidationError
 from .watcher import DocumentationWatcher
 
 logger = logging.getLogger("griffonner.cli")
+
+
+def version_callback(value: bool) -> None:
+    """Print version and exit if --version is provided."""
+    if value:
+        typer.echo(f"griffonner version {version('griffonner')}")
+        raise typer.Exit()
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -40,6 +48,12 @@ def main_callback(
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
+    version: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--version", callback=version_callback, is_eager=True, help="Show version"
+        ),
+    ] = None,
 ) -> None:
     """Main callback to handle global options."""
     if verbose:
