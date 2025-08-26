@@ -174,3 +174,110 @@ def custom_function():
             assert e.__cause__ is not None
         else:
             pytest.fail("Expected ModuleLoadError to be raised")
+
+    def test_new_griffe_config_structure(self):
+        """Tests the new griffe config structure with method calls."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create a simple module
+            module_content = '''"""Test module."""
+
+def hello():
+    """Say hello."""
+    pass
+'''
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Use new config structure with loader options and method calls
+            griffe_config = {
+                "loader": {
+                    "allow_inspection": True,
+                    "store_source": False,
+                    "load": {"submodules": True},
+                    "resolve_aliases": {"external": False},
+                }
+            }
+
+            griffe_obj = load_griffe_object(
+                "test_module",
+                search_paths=[temp_path],
+                griffe_config=griffe_config,
+            )
+
+            assert griffe_obj is not None
+            assert griffe_obj.name == "test_module"
+            assert griffe_obj.kind.value == "module"
+            assert "hello" in griffe_obj.members
+
+    def test_contextlib_import_without_resolve_aliases(self):
+        """Tests the contextlib issue - no alias resolution means no errors."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Reproduce the exact example from the GitHub issue
+            module_content = '''import contextlib
+
+def hello():
+    """Say hello."""
+    pass
+'''
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Use new structure without resolve_aliases method call
+            griffe_config = {
+                "loader": {
+                    "allow_inspection": True,
+                    "load": {"submodules": False},
+                    # Note: no resolve_aliases call = no alias resolution errors
+                }
+            }
+
+            griffe_obj = load_griffe_object(
+                "test_module",
+                search_paths=[temp_path],
+                griffe_config=griffe_config,
+            )
+
+            assert griffe_obj is not None
+            assert griffe_obj.name == "test_module"
+            assert griffe_obj.kind.value == "module"
+
+            # The module should have both hello function and contextlib import
+            assert "hello" in griffe_obj.members
+            assert "contextlib" in griffe_obj.members
+
+            # The contextlib member should be an alias (not resolved)
+            contextlib_member = griffe_obj.members["contextlib"]
+            from griffe import Alias
+
+            assert isinstance(contextlib_member, Alias)
+
+    def test_empty_config_works(self):
+        """Tests that empty/default config works."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create a simple module
+            module_content = '''"""Simple test module."""
+
+def simple_function():
+    """A simple function."""
+    pass
+'''
+
+            module_file = temp_path / "simple_module.py"
+            module_file.write_text(module_content)
+
+            # Empty config should work
+            griffe_obj = load_griffe_object(
+                "simple_module", search_paths=[temp_path], griffe_config={}
+            )
+
+            assert griffe_obj is not None
+            assert griffe_obj.name == "simple_module"
+            assert "simple_function" in griffe_obj.members

@@ -58,30 +58,32 @@ class TestFrontmatterConfig:
         )
         assert config.template == "python/default/module.j2"
 
-    def test_griffe_options_dict(self):
-        """Tests that griffe_options accepts arbitrary dict values."""
+    def test_griffe_config_dict(self):
+        """Tests that griffe accepts arbitrary nested configuration."""
         config = FrontmatterConfig(
             template="python/default/module.md.jinja2",
             output=[OutputItem(filename="test.md", griffe_target="mymodule")],
-            griffe_options={
-                "include_private": False,
-                "follow_imports": True,
-                "docstring_style": "sphinx",
-                "custom_option": "custom_value",
+            griffe={
+                "loader": {
+                    "include_private": False,
+                    "store_source": True,
+                    "load": {"submodules": True},
+                    "resolve_aliases": {"external": False},
+                }
             },
         )
-        assert config.griffe_options["include_private"] is False
-        assert config.griffe_options["follow_imports"] is True
-        assert config.griffe_options["docstring_style"] == "sphinx"
-        assert config.griffe_options["custom_option"] == "custom_value"
+        assert config.griffe["loader"]["include_private"] is False
+        assert config.griffe["loader"]["store_source"] is True
+        assert config.griffe["loader"]["load"]["submodules"] is True
+        assert config.griffe["loader"]["resolve_aliases"]["external"] is False
 
-    def test_griffe_options_default_empty(self):
-        """Tests that griffe_options defaults to empty dict."""
+    def test_griffe_config_default_empty(self):
+        """Tests that griffe defaults to empty dict."""
         config = FrontmatterConfig(
             template="python/default/module.md.jinja2",
             output=[OutputItem(filename="test.md", griffe_target="mymodule")],
         )
-        assert config.griffe_options == {}
+        assert config.griffe == {}
 
 
 class TestParseFrontmatterFile:
