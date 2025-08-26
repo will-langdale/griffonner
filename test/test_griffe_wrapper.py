@@ -1,5 +1,6 @@
 """Tests for griffe_wrapper module."""
 
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -58,21 +59,22 @@ class TestLoadGriffeObject:
             temp_path = Path(temp_dir)
 
             # Create a simple Python module
-            module_content = '''"""Test module."""
+            module_content = textwrap.dedent('''\
+                """Test module."""
 
-def hello_world():
-    """Say hello to the world."""
-    return "Hello, World!"
+                def hello_world():
+                    """Say hello to the world."""
+                    return "Hello, World!"
 
-class TestClass:
-    """A test class."""
-    
-    def test_method(self):
-        """A test method."""
-        return "test"
+                class TestClass:
+                    """A test class."""
+                    
+                    def test_method(self):
+                        """A test method."""
+                        return "test"
 
-CONSTANT = 42
-'''
+                CONSTANT = 42
+                ''')
 
             module_file = temp_path / "test_module.py"
             module_file.write_text(module_content)
@@ -118,12 +120,15 @@ CONSTANT = 42
 
             # Create module.py
             module_file = package_dir / "module.py"
-            module_file.write_text('''"""Test module in package."""
+            module_file.write_text(
+                textwrap.dedent('''\
+                """Test module in package."""
 
-def test_function():
-    """A test function."""
-    return "test"
-''')
+                def test_function():
+                    """A test function."""
+                    return "test"
+                ''')
+            )
 
             # Load the package by name with search path
             griffe_obj = load_griffe_object("test_package", search_paths=[temp_path])
@@ -142,12 +147,15 @@ def test_function():
             subdir.mkdir()
 
             module_file = subdir / "custom_module.py"
-            module_file.write_text('''"""Custom module."""
+            module_file.write_text(
+                textwrap.dedent('''\
+                """Custom module."""
 
-def custom_function():
-    """A custom function."""
-    return "custom"
-''')
+                def custom_function():
+                    """A custom function."""
+                    return "custom"
+                ''')
+            )
 
             # Load with custom search path
             griffe_obj = load_griffe_object("custom_module", search_paths=[subdir])
@@ -175,18 +183,19 @@ def custom_function():
         else:
             pytest.fail("Expected ModuleLoadError to be raised")
 
-    def test_new_griffe_config_structure(self):
-        """Tests the new griffe config structure with method calls."""
+    def test_griffe_config_structure(self):
+        """Tests the griffe config structure with method calls."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
             # Create a simple module
-            module_content = '''"""Test module."""
+            module_content = textwrap.dedent('''\
+                """Test module."""
 
-def hello():
-    """Say hello."""
-    pass
-'''
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
 
             module_file = temp_path / "test_module.py"
             module_file.write_text(module_content)
@@ -218,12 +227,13 @@ def hello():
             temp_path = Path(temp_dir)
 
             # Reproduce the exact example from the GitHub issue
-            module_content = '''import contextlib
+            module_content = textwrap.dedent('''\
+                import contextlib
 
-def hello():
-    """Say hello."""
-    pass
-'''
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
 
             module_file = temp_path / "test_module.py"
             module_file.write_text(module_content)
@@ -263,12 +273,13 @@ def hello():
             temp_path = Path(temp_dir)
 
             # Create a simple module
-            module_content = '''"""Simple test module."""
+            module_content = textwrap.dedent('''\
+                """Simple test module."""
 
-def simple_function():
-    """A simple function."""
-    pass
-'''
+                def simple_function():
+                    """A simple function."""
+                    pass
+                ''')
 
             module_file = temp_path / "simple_module.py"
             module_file.write_text(module_content)
@@ -281,3 +292,154 @@ def simple_function():
             assert griffe_obj is not None
             assert griffe_obj.name == "simple_module"
             assert "simple_function" in griffe_obj.members
+
+    def test_invalid_loader_options(self):
+        """Tests that invalid loader options raise appropriate errors."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            module_content = textwrap.dedent('''\
+                """Test module."""
+
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Invalid loader option should raise ModuleLoadError
+            griffe_config = {"loader": {"invalid_option": "invalid_value"}}
+
+            with pytest.raises(ModuleLoadError, match="Invalid Griffe loader options"):
+                load_griffe_object(
+                    "test_module",
+                    search_paths=[temp_path],
+                    griffe_config=griffe_config,
+                )
+
+    def test_invalid_load_options(self):
+        """Tests that invalid load options raise appropriate errors."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            module_content = textwrap.dedent('''\
+                """Test module."""
+
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Invalid load option should raise ModuleLoadError
+            griffe_config = {
+                "loader": {"load": {"invalid_load_option": "invalid_value"}}
+            }
+
+            with pytest.raises(ModuleLoadError, match="Invalid load options"):
+                load_griffe_object(
+                    "test_module",
+                    search_paths=[temp_path],
+                    griffe_config=griffe_config,
+                )
+
+    def test_method_call_failure(self):
+        """Tests that method call failures are handled properly."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            module_content = textwrap.dedent('''\
+                """Test module."""
+
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Invalid method args should cause method failure
+            griffe_config = {
+                "loader": {"resolve_aliases": {"invalid_arg": "invalid_value"}}
+            }
+
+            with pytest.raises(
+                ModuleLoadError, match="Griffe method 'resolve_aliases' failed"
+            ):
+                load_griffe_object(
+                    "test_module",
+                    search_paths=[temp_path],
+                    griffe_config=griffe_config,
+                )
+
+    def test_nonexistent_method_warning(self):
+        """Tests that nonexistent methods are skipped with warning."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            module_content = textwrap.dedent('''\
+                """Test module."""
+
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Nonexistent method should be skipped (not error)
+            griffe_config = {
+                "loader": {"nonexistent_method": {"some_arg": "some_value"}}
+            }
+
+            # Should complete without error, just log warning
+            griffe_obj = load_griffe_object(
+                "test_module",
+                search_paths=[temp_path],
+                griffe_config=griffe_config,
+            )
+
+            assert griffe_obj is not None
+            assert griffe_obj.name == "test_module"
+            assert "hello" in griffe_obj.members
+
+    def test_various_loader_options(self):
+        """Tests various valid loader initialization options."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            module_content = textwrap.dedent('''\
+                """Test module with docstring."""
+
+                def hello():
+                    """Say hello."""
+                    pass
+                ''')
+
+            module_file = temp_path / "test_module.py"
+            module_file.write_text(module_content)
+
+            # Test various loader options
+            griffe_config = {
+                "loader": {
+                    "allow_inspection": False,
+                    "store_source": True,
+                    "load": {"submodules": False},
+                }
+            }
+
+            griffe_obj = load_griffe_object(
+                "test_module",
+                search_paths=[temp_path],
+                griffe_config=griffe_config,
+            )
+
+            assert griffe_obj is not None
+            assert griffe_obj.name == "test_module"
+            assert "hello" in griffe_obj.members
