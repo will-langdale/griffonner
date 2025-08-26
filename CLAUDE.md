@@ -99,13 +99,10 @@ custom_vars:
 **CLI commands**:
 - `griffonner generate docs/pages/` - Generate all files
 - `griffonner generate docs/pages/api.md` - Generate single file
-- `griffonner generate docs/pages/ --local-plugins myproject.docs_utils` - Generate with local plugins
-- `griffonner generate docs/pages/ -l myproject.utils -l myproject.helpers` - Multiple local plugin modules
-- `griffonner watch docs/pages/` - Watch mode for development  
-- `griffonner watch docs/pages/ --local-plugins myproject.docs_utils` - Watch with local plugins
+- `griffonner generate --local-plugins <module>` - Generate with local plugins
+- `griffonner watch docs/pages/` - Watch mode for development
 - `griffonner templates` - List available templates
 - `griffonner plugins` - List all available plugins
-- `griffonner plugins --local-plugins myproject.docs_utils` - List plugins including local ones
 - `griffonner bundle <name>` - Show details about a specific bundle
 
 ## Design principles
@@ -220,148 +217,16 @@ entry_points={
 ```
 
 ### Local Plugin Modules
-For project-specific plugins, you can specify Python modules containing local filters and processors via CLI. This approach allows you to keep custom documentation logic within your project without needing to package it as a separate plugin.
+Local plugins allow loading project-specific filters and processors from Python modules using `--local-plugins <module_name>`. Implementation uses `importlib.import_module()` for clean module-based discovery without filesystem scanning or sys.path manipulation.
 
-**CLI Usage:**
-```bash
-# Single module
-griffonner generate docs/pages/ --local-plugins myproject.docs_utils
+**Architecture:**
+- PluginManager accepts `local_plugin_modules` parameter in constructor
+- Filters: Any callable function at module level (excluding private `_` names)  
+- Processors: Classes with `process` method (duck typing or BaseProcessor inheritance)
+- Name registration: Both simple (`filter_name`) and qualified (`module.filter_name`) names
+- Integration: Works alongside existing entry point plugin system
 
-# Multiple modules using long form
-griffonner generate docs/pages/ --local-plugins myproject.docs_utils --local-plugins myproject.helpers
-
-# Multiple modules using short form
-griffonner generate docs/pages/ -l myproject.utils -l myproject.helpers -l myproject.formatters
-
-# Works with all commands that support plugins
-griffonner watch docs/pages/ --local-plugins myproject.docs_utils
-griffonner plugins --local-plugins myproject.docs_utils
-```
-
-**Local Plugin Module Structure:**
-```python
-# myproject/docs_utils.py
-"""Custom documentation utilities for MyProject."""
-
-def format_signature(sig):
-    """Filter function - auto-registered as 'format_signature'
-    
-    Usage: {{ func.signature | format_signature }}
-    """
-    return sig.replace("(", "(\n    ").replace(", ", ",\n    ")
-
-def prettify_name(name):
-    """Convert snake_case to Title Case
-    
-    Usage: {{ func.name | prettify_name }}
-    """
-    return name.replace("_", " ").title()
-
-def link_to_source(obj_path, line_number=None):
-    """Generate source code links
-    
-    Usage: {{ obj | link_to_source }}
-    """
-    base_url = "https://github.com/myorg/myproject/blob/main"
-    if line_number:
-        return f"{base_url}/{obj_path}#L{line_number}"
-    return f"{base_url}/{obj_path}"
-
-class MetadataProcessor(BaseProcessor):
-    """Adds custom metadata to template context"""
-    
-    @property
-    def name(self):
-        return "metadata_processor"
-    
-    @property
-    def priority(self):
-        return 75  # Run before default processors
-    
-    def process(self, obj, context):
-        context["custom_metadata"] = {
-            "processed": True,
-            "complexity": self._calculate_complexity(obj),
-            "tags": self._extract_tags(obj)
-        }
-        return obj, context
-    
-    def _calculate_complexity(self, obj):
-        # Custom complexity calculation logic
-        return len(getattr(obj, "members", {}))
-    
-    def _extract_tags(self, obj):
-        # Extract custom tags from docstrings
-        docstring = getattr(obj, "docstring", {})
-        if docstring and docstring.value:
-            # Simple tag extraction example
-            if "@deprecated" in docstring.value:
-                return ["deprecated"]
-            if "@experimental" in docstring.value:
-                return ["experimental"]
-        return []
-
-# Simple processor without inheriting from BaseProcessor
-class SimpleDocProcessor:
-    """A simple processor for basic doc enhancements"""
-    
-    @property
-    def name(self):
-        return "simple_doc_processor"
-    
-    def process(self, obj, context):
-        # Add some simple enhancements
-        context["has_examples"] = self._has_examples(obj)
-        return obj, context
-    
-    def _has_examples(self, obj):
-        docstring = getattr(obj, "docstring", {})
-        if docstring and docstring.value:
-            return "Example" in docstring.value or ">>> " in docstring.value
-        return False
-```
-
-**Usage in Templates:**
-```jinja2
-{# Use local filters #}
-<h2>{{ func.name | prettify_name }}</h2>
-<pre>{{ func.signature | format_signature }}</pre>
-<a href="{{ func | link_to_source }}">View Source</a>
-
-{# Use context added by processors #}
-{% if custom_metadata.complexity > 5 %}
-<div class="complexity-warning">High complexity: {{ custom_metadata.complexity }}</div>
-{% endif %}
-
-{% for tag in custom_metadata.tags %}
-<span class="tag tag-{{ tag }}">{{ tag }}</span>
-{% endfor %}
-
-{% if has_examples %}
-<div class="has-examples">✓ Includes examples</div>
-{% endif %}
-```
-
-**Usage in Frontmatter:**
-```yaml
----
-template: "python/default/module.md.jinja2"
-griffe_target: "myproject.core"
-processors:
-  enabled: ["metadata_processor", "simple_doc_processor"]  # Use local processors
-output:
-  filename: "core-api.md"
-custom_vars:
-  show_complexity: true
----
-```
-
-**Name Resolution:**
-Local plugins are registered with both simple and qualified names:
-- **Simple name**: `format_signature` (if no conflict)
-- **Qualified name**: `myproject.docs_utils.format_signature` (always available)
-
-If multiple modules define the same function/processor name, the first one loaded gets the simple name, but all are accessible via qualified names.
+See `docs/plugins/managing-plugins.md` for usage examples and `docs/user-guide/cli-reference.md` for CLI options.
 
 ### Frontmatter Configuration
 Control processor execution per file:
