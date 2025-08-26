@@ -3,7 +3,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import typer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -11,6 +11,9 @@ from watchdog.observers import Observer
 
 from .core import generate_file
 from .frontmatter import find_frontmatter_files
+
+if TYPE_CHECKING:
+    from .plugins.manager import PluginManager
 
 logger = logging.getLogger("griffonner.watcher")
 
@@ -23,6 +26,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         source_dir: Path,
         output_dir: Path,
         template_dirs: Optional[List[Path]] = None,
+        plugin_manager: Optional["PluginManager"] = None,
     ) -> None:
         """Initialise the event handler.
 
@@ -30,14 +34,19 @@ class GriffonnerEventHandler(FileSystemEventHandler):
             source_dir: Directory to watch for changes
             output_dir: Output directory for generated files
             template_dirs: Additional template directories
+            plugin_manager: Optional plugin manager for processors/filters
         """
         super().__init__()
         self.source_dir = source_dir
         self.output_dir = output_dir
         self.template_dirs = template_dirs or []
+        self.plugin_manager = plugin_manager
 
         logger.info(f"Initialised event handler - source: {source_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
+        logger.info(
+            f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
+        )
 
     def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events.
@@ -101,7 +110,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
             logger.info("File confirmed as frontmatter file, proceeding")
             # Generate the file
             generated_files = generate_file(
-                file_path, self.output_dir, self.template_dirs
+                file_path, self.output_dir, self.template_dirs, self.plugin_manager
             )
 
             file_count = len(generated_files)
@@ -129,6 +138,7 @@ class DocumentationWatcher:
         source_dir: Path,
         output_dir: Path,
         template_dirs: Optional[List[Path]] = None,
+        plugin_manager: Optional["PluginManager"] = None,
     ) -> None:
         """Initialise the documentation watcher.
 
@@ -136,19 +146,24 @@ class DocumentationWatcher:
             source_dir: Directory to watch for changes
             output_dir: Output directory for generated files
             template_dirs: Additional template directories
+            plugin_manager: Optional plugin manager for processors/filters
         """
         self.source_dir = source_dir.resolve()
         self.output_dir = output_dir.resolve()
         self.template_dirs = template_dirs or []
+        self.plugin_manager = plugin_manager
 
         logger.info("Initialising DocumentationWatcher")
         logger.info(f"Source directory: {self.source_dir}")
         logger.info(f"Output directory: {self.output_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
+        logger.info(
+            f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
+        )
 
         self.observer = Observer()
         self.event_handler = GriffonnerEventHandler(
-            self.source_dir, self.output_dir, self.template_dirs
+            self.source_dir, self.output_dir, self.template_dirs, self.plugin_manager
         )
         logger.info("DocumentationWatcher initialised")
 
