@@ -68,21 +68,31 @@ def generate_cmd(
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
     ] = None,
+    local_plugins: Annotated[
+        Optional[List[str]],
+        typer.Option(
+            "--local-plugins", "-l", help="Python modules containing local plugins"
+        ),
+    ] = None,
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
 ) -> None:
     """Generate documentation from source files with frontmatter."""
     template_dirs = template_dirs or []
+    local_plugins = local_plugins or []
 
     if verbose:
         setup_logging(verbose=True)
 
     logger.info(f"Beginning generation: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
+    logger.info(f"Local plugin modules: {local_plugins}")
 
     try:
-        generated_files = generate(source, output_dir, template_dirs)
+        # Create plugin manager with local plugin modules
+        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
+        generated_files = generate(source, output_dir, template_dirs, plugin_manager)
 
         typer.echo(f"✅ Generated {len(generated_files)} files:")
         for file_path in generated_files:
@@ -179,21 +189,33 @@ def watch(
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
     ] = None,
+    local_plugins: Annotated[
+        Optional[List[str]],
+        typer.Option(
+            "--local-plugins", "-l", help="Python modules containing local plugins"
+        ),
+    ] = None,
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
 ) -> None:
     """Watch source directory for changes and regenerate documentation."""
     template_dirs = template_dirs or []
+    local_plugins = local_plugins or []
 
     if verbose:
         setup_logging(verbose=True)
 
     logger.info(f"Starting watch mode: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
+    logger.info(f"Local plugin modules: {local_plugins}")
 
     try:
-        watcher = DocumentationWatcher(source, output_dir, template_dirs)
+        # Create plugin manager with local plugin modules
+        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
+        watcher = DocumentationWatcher(
+            source, output_dir, template_dirs, plugin_manager
+        )
         watcher.watch()
     except KeyboardInterrupt:
         logger.info("Watch mode interrupted by user")
@@ -206,18 +228,27 @@ def watch(
 
 @app.command("plugins")
 def plugins_cmd(
+    local_plugins: Annotated[
+        Optional[List[str]],
+        typer.Option(
+            "--local-plugins", "-l", help="Python modules containing local plugins"
+        ),
+    ] = None,
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
 ) -> None:
     """List all available plugins (processors, filters, bundles)."""
+    local_plugins = local_plugins or []
+
     if verbose:
         setup_logging(verbose=True)
 
     logger.info("Discovering available plugins")
+    logger.info(f"Local plugin modules: {local_plugins}")
 
     try:
-        plugin_manager = PluginManager()
+        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
         plugins = plugin_manager.list_plugins()
 
         if not any(plugins.values()):

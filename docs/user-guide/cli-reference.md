@@ -28,6 +28,7 @@ griffonner generate [OPTIONS] SOURCE
 
 - `--output, -o PATH` - Output directory (default: `docs/output`)
 - `--template-dir, -t PATH` - Additional template directories (can be used multiple times)
+- `--local-plugins, -l TEXT` - Python modules containing local plugins (can be used multiple times)
 - `--help` - Show help message
 
 **Examples:**
@@ -44,6 +45,10 @@ griffonner generate docs/pages/ --output build/docs
 
 # Additional template directories
 griffonner generate docs/pages/ --template-dir custom-templates/ --template-dir shared-templates/
+
+# With local plugins
+griffonner generate docs/pages/ --local-plugins myproject.docs_plugins
+griffonner generate docs/pages/ --local-plugins myproject.filters --local-plugins myproject.processors
 ```
 
 ### `watch`
@@ -62,6 +67,7 @@ griffonner watch [OPTIONS] SOURCE
 
 - `--output, -o PATH` - Output directory (default: `docs/output`)
 - `--template-dir, -t PATH` - Additional template directories (can be used multiple times)
+- `--local-plugins, -l TEXT` - Python modules containing local plugins (can be used multiple times)
 - `--help` - Show help message
 
 **Examples:**
@@ -75,6 +81,9 @@ griffonner watch docs/pages/ --output build/docs
 
 # Watch with additional templates
 griffonner watch docs/pages/ --template-dir custom-templates/
+
+# Watch with local plugins
+griffonner watch docs/pages/ --local-plugins myproject.docs_plugins
 ```
 
 **Behaviour:**
@@ -163,6 +172,7 @@ griffonner plugins [OPTIONS]
 
 **Options:**
 
+- `--local-plugins, -l TEXT` - Python modules containing local plugins (can be used multiple times)
 - `--help` - Show help message
 
 **Examples:**
@@ -170,13 +180,20 @@ griffonner plugins [OPTIONS]
 ```shell
 # List all installed plugins
 griffonner plugins
+
+# Include local plugins
+griffonner plugins --local-plugins myproject.docs_plugins
 ```
 
 **Output includes:**
 
 - Plugin name and type (processor or filter)
-- Plugin source package
+- Plugin source (entry point package or local module)
 - Brief description (if available)
+
+**Local plugins:**
+
+Local plugins are loaded from Python modules you specify. They appear with their module path in the plugin list (e.g., `myproject.docs_plugins.my_filter`).
 
 ### `bundle`
 
@@ -337,6 +354,7 @@ griffonner watch docs/pages/ --verbose
 2. Check `griffonner plugins` for installed processors and filters
 3. Use `griffonner bundle` to explore available bundles
 4. Create source files with frontmatter
-5. Test with `griffonner generate` for single runs
-6. Use `griffonner watch` for development with live reload
-7. Validate custom templates with `griffonner validate`
+5. Set up local plugins if needed with `--local-plugins`
+6. Test with `griffonner generate` for single runs
+7. Use `griffonner watch` for development with live reload
+8. Validate custom templates with `griffonner validate`

@@ -99,6 +99,7 @@ custom_vars:
 **CLI commands**:
 - `griffonner generate docs/pages/` - Generate all files
 - `griffonner generate docs/pages/api.md` - Generate single file
+- `griffonner generate --local-plugins <module>` - Generate with local plugins
 - `griffonner watch docs/pages/` - Watch mode for development
 - `griffonner templates` - List available templates
 - `griffonner plugins` - List all available plugins
@@ -214,6 +215,18 @@ entry_points={
     ],
 }
 ```
+
+### Local Plugin Modules
+Local plugins allow loading project-specific filters and processors from Python modules using `--local-plugins <module_name>`. Implementation uses `importlib.import_module()` for clean module-based discovery without filesystem scanning or sys.path manipulation.
+
+**Architecture:**
+- PluginManager accepts `local_plugin_modules` parameter in constructor
+- Filters: Any callable function at module level (excluding private `_` names)  
+- Processors: Classes with `process` method (duck typing or BaseProcessor inheritance)
+- Name registration: Both simple (`filter_name`) and qualified (`module.filter_name`) names
+- Integration: Works alongside existing entry point plugin system
+
+See `docs/plugins/managing-plugins.md` for usage examples and `docs/user-guide/cli-reference.md` for CLI options.
 
 ### Frontmatter Configuration
 Control processor execution per file:
