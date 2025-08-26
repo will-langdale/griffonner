@@ -45,9 +45,6 @@ app = typer.Typer(
 
 @app.callback()
 def main_callback(
-    verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
     version: Annotated[
         Optional[bool],
         typer.Option(
@@ -56,8 +53,7 @@ def main_callback(
     ] = None,
 ) -> None:
     """Main callback to handle global options."""
-    if verbose:
-        setup_logging(verbose=True)
+    pass
 
 
 @app.command("generate")
@@ -72,9 +68,15 @@ def generate_cmd(
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
     ] = None,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
 ) -> None:
     """Generate documentation from source files with frontmatter."""
     template_dirs = template_dirs or []
+
+    if verbose:
+        setup_logging(verbose=True)
 
     logger.info(f"Beginning generation: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
@@ -101,9 +103,15 @@ def templates(
     pattern: Annotated[
         str, typer.Option("--pattern", "-p", help="Pattern to match templates")
     ] = "**/*.jinja2",
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
 ) -> None:
     """List available templates."""
     template_dirs = template_dirs or []
+
+    if verbose:
+        setup_logging(verbose=True)
 
     logger.info(f"Searching for templates with pattern: {pattern}")
     logger.info(f"Template directories: {template_dirs}")
@@ -133,9 +141,15 @@ def validate(
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Template directories to search"),
     ] = None,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
 ) -> None:
     """Validate template syntax and structure."""
     template_dirs = template_dirs or []
+
+    if verbose:
+        setup_logging(verbose=True)
 
     logger.info(f"Validating template: {template_path}")
     logger.info(f"Template directories: {template_dirs}")
@@ -165,9 +179,15 @@ def watch(
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
     ] = None,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
 ) -> None:
     """Watch source directory for changes and regenerate documentation."""
     template_dirs = template_dirs or []
+
+    if verbose:
+        setup_logging(verbose=True)
 
     logger.info(f"Starting watch mode: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
@@ -185,8 +205,15 @@ def watch(
 
 
 @app.command("plugins")
-def plugins_cmd() -> None:
+def plugins_cmd(
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
+) -> None:
     """List all available plugins (processors, filters, bundles)."""
+    if verbose:
+        setup_logging(verbose=True)
+
     logger.info("Discovering available plugins")
 
     try:
@@ -226,8 +253,14 @@ def plugins_cmd() -> None:
 @app.command("bundle")
 def bundle_info_cmd(
     bundle_name: Annotated[str, typer.Argument(help="Bundle name to inspect")],
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
 ) -> None:
     """Show detailed information about a specific bundle."""
+    if verbose:
+        setup_logging(verbose=True)
+
     logger.info(f"Getting information for bundle: {bundle_name}")
 
     try:
