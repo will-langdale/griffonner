@@ -77,7 +77,7 @@ def generate_file(
             logger.info(f"Loading Griffe object for: {output_item.griffe_target}")
             griffe_obj = load_griffe_object(
                 output_item.griffe_target,
-                griffe_options=parsed.frontmatter.griffe_options,
+                griffe_config=parsed.frontmatter.griffe,
             )
 
             # Prepare initial template context

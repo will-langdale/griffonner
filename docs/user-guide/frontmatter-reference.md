@@ -145,26 +145,71 @@ processors:
     scan_comments: false
 ```
 
-### `griffe_options`
+### `griffe`
 
 **Type**: `object`  
 **Default**: `{}`
 
-Options passed directly to Griffe for code parsing.
+Griffe configuration with loader options and method calls. This structure mirrors Griffe's API directly.
 
 ```yaml
-griffe_options:
-  include_private: false
-  show_source: true
-  docstring_style: "google"
-  follow_imports: true
+griffe:
+  loader:
+    # GriffeLoader init options
+    allow_inspection: true
+    store_source: false
+    docstring_parser: "google"
+    
+    # Method calls on the loader
+    load:
+      submodules: true
+      find_stubs_package: false
+    resolve_aliases:
+      external: false
+      implicit: false
+      max_iterations: 10
 ```
 
-Common options:
-- `include_private`: Include private members (leading underscore)
-- `show_source`: Include source code in parsed objects
-- `docstring_style`: Docstring parsing style (`"google"`, `"numpy"`, `"sphinx"`)
-- `follow_imports`: Parse imported modules
+**Structure**:
+- `loader`: Configuration for the GriffeLoader instance
+  - Top-level keys are passed to `GriffeLoader.__init__()`
+  - Nested objects represent method calls on the loader
+  
+**Common loader init options**:
+- `allow_inspection`: Allow runtime introspection (default: `true`)
+- `store_source`: Store source code in parsed objects (default: `true`)
+- `docstring_parser`: Docstring parsing style (`"google"`, `"numpy"`, `"sphinx"`)
+
+**Common method calls**:
+- `load`: Options for `loader.load()` method
+  - `submodules`: Recurse into submodules (default: `true`)
+  - `find_stubs_package`: Search for stubs-only packages (default: `false`)
+- `resolve_aliases`: Options for `loader.resolve_aliases()` method
+  - `external`: Load external packages during resolution (default: `null`)
+  - `implicit`: Resolve implicit aliases (default: `false`)
+  - `max_iterations`: Maximum resolution iterations (default: `null`)
+
+**Examples**:
+
+Disable alias resolution (fixes standard library import issues):
+```yaml
+griffe:
+  loader:
+    allow_inspection: true
+    load:
+      submodules: false
+    # Note: no resolve_aliases call = no alias resolution
+```
+
+Enable strict alias resolution:
+```yaml
+griffe:
+  loader:
+    allow_inspection: false
+    resolve_aliases:
+      external: true
+      implicit: true
+```
 
 ## Output configuration
 

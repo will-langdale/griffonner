@@ -32,7 +32,7 @@ class FrontmatterConfig(BaseModel):
 
     template: str
     output: List[OutputItem]
-    griffe_options: Dict[str, Any] = Field(default_factory=dict)
+    griffe: Dict[str, Any] = Field(default_factory=dict)
     custom_vars: Dict[str, Any] = Field(default_factory=dict)
     processors: Optional[ProcessorConfig] = Field(default=None)
 
