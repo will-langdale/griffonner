@@ -1,5 +1,6 @@
 """Main generation logic for Griffonner."""
 
+import fnmatch
 import logging
 import shutil
 from pathlib import Path
@@ -17,19 +18,24 @@ class GenerationError(Exception):
     """Base exception for generation errors."""
 
 
-def find_all_files(directory: Path) -> List[Path]:
-    """Find all files in a directory recursively.
+def find_all_files(
+    directory: Path, ignore_patterns: Optional[List[str]] = None
+) -> List[Path]:
+    """Find all files in a directory recursively, excluding ignored patterns.
 
     Args:
         directory: Directory to search
+        ignore_patterns: Glob patterns to ignore
 
     Returns:
-        List of all file paths
+        List of all file paths not matching ignore patterns
 
     Raises:
         NotADirectoryError: If directory doesn't exist or isn't a directory
     """
+    ignore_patterns = ignore_patterns or []
     logger.info(f"Finding all files in: {directory}")
+    logger.info(f"Ignore patterns: {ignore_patterns}")
 
     if not directory.exists():
         logger.error(f"Directory not found: {directory}")
@@ -41,10 +47,31 @@ def find_all_files(directory: Path) -> List[Path]:
 
     all_files = []
     skipped_files = []
+    ignored_files = []
 
     for file_path in directory.rglob("*"):
         if not file_path.is_file():
             continue
+
+        # Check if file matches any ignore patterns
+        try:
+            relative_path = file_path.relative_to(directory)
+            # Normalise path for consistent matching across platforms
+            relative_str = str(relative_path).replace("\\", "/")
+
+            # Check if file matches any ignore pattern
+            is_ignored = any(
+                fnmatch.fnmatch(relative_str, pattern) for pattern in ignore_patterns
+            )
+
+            if is_ignored:
+                ignored_files.append(file_path)
+                logger.info(f"Ignored file (matches pattern): {file_path}")
+                continue
+        except ValueError:
+            # File is not within directory (shouldn't happen with rglob)
+            continue
+
         try:
             # Quick check that file is readable
             file_path.read_text(encoding="utf-8", errors="strict")
@@ -55,7 +82,10 @@ def find_all_files(directory: Path) -> List[Path]:
             skipped_files.append(file_path)
             continue
 
-    logger.info(f"Found {len(all_files)} files, {len(skipped_files)} skipped")
+    logger.info(
+        f"Found {len(all_files)} files, {len(skipped_files)} skipped, "
+        f"{len(ignored_files)} ignored"
+    )
     return sorted(all_files)
 
 
@@ -275,6 +305,7 @@ def generate_directory(
     output_dir: Path,
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
+    ignore_patterns: Optional[List[str]] = None,
 ) -> List[Path]:
     """Generate documentation from all files in a directory.
 
@@ -283,6 +314,7 @@ def generate_directory(
         output_dir: Base output directory
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
+        ignore_patterns: Glob patterns to ignore
 
     Returns:
         List of all generated and copied output file paths
@@ -295,7 +327,7 @@ def generate_directory(
 
     # Find all files
     logger.info("Searching for all files")
-    all_files = find_all_files(pages_dir)
+    all_files = find_all_files(pages_dir, ignore_patterns)
     logger.info(f"Found {len(all_files)} total files")
 
     if not all_files:
@@ -374,6 +406,7 @@ def generate(
     output_dir: Path,
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
+    ignore_patterns: Optional[List[str]] = None,
 ) -> List[Path]:
     """Generate documentation from a file or directory.
 
@@ -382,6 +415,7 @@ def generate(
         output_dir: Output directory path
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
+        ignore_patterns: Glob patterns to ignore
 
     Returns:
         List of generated output file paths
@@ -401,7 +435,9 @@ def generate(
         return generate_file(source, output_dir, template_dirs, plugin_manager)
     elif source.is_dir():
         logger.info("Source is a directory, using generate_directory")
-        return generate_directory(source, output_dir, template_dirs, plugin_manager)
+        return generate_directory(
+            source, output_dir, template_dirs, plugin_manager, ignore_patterns
+        )
     else:
         logger.error(f"Source is neither file nor directory: {source}")
         raise GenerationError(f"Source must be a file or directory: {source}")

@@ -74,6 +74,10 @@ def generate_cmd(
             "--local-plugins", "-l", help="Python modules containing local plugins"
         ),
     ] = None,
+    ignore: Annotated[
+        Optional[List[str]],
+        typer.Option("--ignore", help="Glob patterns to ignore in source directory"),
+    ] = None,
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
@@ -81,6 +85,7 @@ def generate_cmd(
     """Generate documentation from source files with frontmatter."""
     template_dirs = template_dirs or []
     local_plugins = local_plugins or []
+    ignore = ignore or []
 
     if verbose:
         setup_logging(verbose=True)
@@ -88,11 +93,14 @@ def generate_cmd(
     logger.info(f"Beginning generation: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
     logger.info(f"Local plugin modules: {local_plugins}")
+    logger.info(f"Ignore patterns: {ignore}")
 
     try:
         # Create plugin manager with local plugin modules
         plugin_manager = PluginManager(local_plugin_modules=local_plugins)
-        generated_files = generate(source, output_dir, template_dirs, plugin_manager)
+        generated_files = generate(
+            source, output_dir, template_dirs, plugin_manager, ignore
+        )
 
         typer.echo(f"✅ Generated {len(generated_files)} files:")
         for file_path in generated_files:
@@ -195,6 +203,10 @@ def watch(
             "--local-plugins", "-l", help="Python modules containing local plugins"
         ),
     ] = None,
+    ignore: Annotated[
+        Optional[List[str]],
+        typer.Option("--ignore", help="Glob patterns to ignore in source directory"),
+    ] = None,
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose output")
     ] = False,
@@ -202,6 +214,7 @@ def watch(
     """Watch source directory for changes and regenerate documentation."""
     template_dirs = template_dirs or []
     local_plugins = local_plugins or []
+    ignore = ignore or []
 
     if verbose:
         setup_logging(verbose=True)
@@ -209,12 +222,13 @@ def watch(
     logger.info(f"Starting watch mode: source={source}, output={output_dir}")
     logger.info(f"Template directories: {template_dirs}")
     logger.info(f"Local plugin modules: {local_plugins}")
+    logger.info(f"Ignore patterns: {ignore}")
 
     try:
         # Create plugin manager with local plugin modules
         plugin_manager = PluginManager(local_plugin_modules=local_plugins)
         watcher = DocumentationWatcher(
-            source, output_dir, template_dirs, plugin_manager
+            source, output_dir, template_dirs, plugin_manager, ignore
         )
         watcher.watch()
     except KeyboardInterrupt:
