@@ -29,6 +29,7 @@ griffonner generate [OPTIONS] SOURCE
 - `--output, -o PATH` - Output directory (default: `docs/output`)
 - `--template-dir, -t PATH` - Additional template directories (can be used multiple times)
 - `--local-plugins, -l TEXT` - Python modules containing local plugins (can be used multiple times)
+- `--ignore TEXT` - Glob patterns to ignore in source directory (can be used multiple times)
 - `--help` - Show help message
 
 **Examples:**
@@ -49,6 +50,15 @@ griffonner generate docs/pages/ --template-dir custom-templates/ --template-dir 
 # With local plugins
 griffonner generate docs/pages/ --local-plugins myproject.docs_plugins
 griffonner generate docs/pages/ --local-plugins myproject.filters --local-plugins myproject.processors
+
+# Ignore specific file patterns
+griffonner generate docs/pages/ --ignore "*.tmp" --ignore "*.pyc"
+
+# Ignore directories and file patterns
+griffonner generate docs/pages/ --ignore "__pycache__/*" --ignore "build/*" --ignore "*.log"
+
+# Combined options
+griffonner generate docs/pages/ --output build/docs --ignore "*.tmp" --ignore ".git/*"
 ```
 
 ### `watch`
@@ -68,6 +78,7 @@ griffonner watch [OPTIONS] SOURCE
 - `--output, -o PATH` - Output directory (default: `docs/output`)
 - `--template-dir, -t PATH` - Additional template directories (can be used multiple times)
 - `--local-plugins, -l TEXT` - Python modules containing local plugins (can be used multiple times)
+- `--ignore TEXT` - Glob patterns to ignore in source directory (can be used multiple times)
 - `--help` - Show help message
 
 **Examples:**
@@ -84,6 +95,12 @@ griffonner watch docs/pages/ --template-dir custom-templates/
 
 # Watch with local plugins
 griffonner watch docs/pages/ --local-plugins myproject.docs_plugins
+
+# Watch with ignore patterns
+griffonner watch docs/pages/ --ignore "*.tmp" --ignore "__pycache__/*"
+
+# Combined watch options
+griffonner watch docs/pages/ --output build/docs --ignore "build/*" --ignore "*.log"
 ```
 
 **Behaviour:**
@@ -342,11 +359,41 @@ griffonner templates --verbose
 griffonner watch docs/pages/ --verbose
 ```
 
+### Ignore patterns
+
+The `--ignore` option allows you to exclude files and directories from processing using glob patterns. This is useful for avoiding temporary files, build artifacts, and version control directories.
+
+**Pattern syntax:**
+- `*.ext` - Ignores all files with the specified extension
+- `dirname/*` - Ignores all files within a directory
+- `**/pattern` - Recursively matches pattern at any depth
+- `path/to/file` - Ignores specific file path
+
+**Common examples:**
+```shell
+# Ignore common temporary and cache files
+--ignore "*.tmp" --ignore "*.pyc" --ignore "*.log"
+
+# Ignore build and cache directories
+--ignore "build/*" --ignore "__pycache__/*" --ignore ".git/*"
+
+# Ignore Node.js and Python artifacts
+--ignore "node_modules/*" --ignore "dist/*" --ignore "*.egg-info/*"
+```
+
+**Behaviour:**
+- Patterns are matched against file paths relative to the source directory
+- Pattern matching is case-sensitive
+- Files matching any ignore pattern are completely excluded from processing
+- In watch mode, ignored files won't trigger regeneration when changed
+- Multiple `--ignore` flags can be used to specify multiple patterns
+
 ### Performance
 
 - Watch mode monitors all file types and processes both frontmatter and regular files
 - Files with frontmatter are generated using templates, files without are copied directly
 - Generation is incremental - only changed files are regenerated in watch mode
+- Using ignore patterns can significantly improve performance by excluding unnecessary files
 
 ### Workflow
 
@@ -355,6 +402,7 @@ griffonner watch docs/pages/ --verbose
 3. Use `griffonner bundle` to explore available bundles
 4. Create source files with frontmatter
 5. Set up local plugins if needed with `--local-plugins`
-6. Test with `griffonner generate` for single runs
-7. Use `griffonner watch` for development with live reload
-8. Validate custom templates with `griffonner validate`
+6. Configure ignore patterns to exclude unwanted files with `--ignore`
+7. Test with `griffonner generate` for single runs
+8. Use `griffonner watch` for development with live reload
+9. Validate custom templates with `griffonner validate`

@@ -1,5 +1,6 @@
 """Tests for core module."""
 
+import shutil
 import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -752,3 +753,235 @@ class TestGenerateDirectoryPassthrough:
             # Should not error with empty directory
             generated_files = generate_directory(source_dir, output_dir)
             assert generated_files == []
+
+
+class TestIgnorePatterns:
+    """Tests for ignore pattern functionality."""
+
+    def test_find_all_files_with_ignore_patterns(self):
+        """Tests that find_all_files respects ignore patterns."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create various files
+            (temp_path / "regular.md").write_text("# Regular file")
+            (temp_path / "temp.tmp").write_text("Temporary file")
+            (temp_path / "cache.pyc").write_text("Python cache")
+
+            # Create subdirectory with ignored files
+            build_dir = temp_path / "build"
+            build_dir.mkdir()
+            (build_dir / "output.html").write_text("Generated file")
+            (build_dir / "assets.css").write_text("Styles")
+
+            # Test without ignore patterns
+            all_files = find_all_files(temp_path)
+            assert len(all_files) == 5
+            filenames = [f.name for f in all_files]
+            assert "regular.md" in filenames
+            assert "temp.tmp" in filenames
+            assert "cache.pyc" in filenames
+            assert "output.html" in filenames
+            assert "assets.css" in filenames
+
+            # Test with ignore patterns
+            ignore_patterns = ["*.tmp", "*.pyc", "build/*"]
+            filtered_files = find_all_files(temp_path, ignore_patterns)
+
+            assert len(filtered_files) == 1
+            assert filtered_files[0].name == "regular.md"
+
+    def test_find_all_files_complex_ignore_patterns(self):
+        """Tests complex ignore patterns with nested directories."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create nested structure
+            (temp_path / "README.md").write_text("# README")
+            (temp_path / "config.ini").write_text("config")
+
+            # Cache directory
+            cache_dir = temp_path / "__pycache__"
+            cache_dir.mkdir()
+            (cache_dir / "module.pyc").write_text("cache")
+            (cache_dir / "other.pyo").write_text("cache")
+
+            # Node modules
+            node_dir = temp_path / "node_modules" / "package"
+            node_dir.mkdir(parents=True)
+            (node_dir / "index.js").write_text("js code")
+
+            # Git directory
+            git_dir = temp_path / ".git" / "objects"
+            git_dir.mkdir(parents=True)
+            (git_dir / "abc123").write_text("git object")
+
+            # Test comprehensive ignore patterns
+            ignore_patterns = ["__pycache__/*", "node_modules/*", ".git/*", "*.ini"]
+            filtered_files = find_all_files(temp_path, ignore_patterns)
+
+            assert len(filtered_files) == 1
+            assert filtered_files[0].name == "README.md"
+
+    def test_generate_directory_with_ignore_patterns(self):
+        """Tests that generate_directory respects ignore patterns."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create template
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+            template_content = "# {{ obj.name }}"
+            template_file = template_dir / "test.md.jinja2"
+            template_file.write_text(template_content)
+
+            # Create source directory
+            source_dir = temp_path / "source"
+            source_dir.mkdir()
+
+            # Frontmatter file (should be processed)
+            frontmatter_file = source_dir / "api.md"
+            frontmatter_content = textwrap.dedent("""
+                ---
+                template: "test.md.jinja2"
+                output:
+                  - filename: "os_module.md"
+                    griffe_target: "os"
+                ---
+                API content.
+            """).strip()
+            frontmatter_file.write_text(frontmatter_content)
+
+            # Regular markdown (should be copied)
+            (source_dir / "README.md").write_text("# Project README")
+
+            # Files that should be ignored
+            (source_dir / "temp.tmp").write_text("Temporary file")
+            (source_dir / "cache.pyc").write_text("Python cache")
+
+            # Create build subdirectory (should be ignored)
+            build_dir = source_dir / "build"
+            build_dir.mkdir()
+            (build_dir / "output.html").write_text("Generated output")
+
+            # Generate without ignore patterns (baseline)
+            output_dir = temp_path / "output"
+            all_files = generate_directory(
+                source_dir, output_dir, template_dirs=[template_dir]
+            )
+            # 1 generated + 4 passthrough (README, temp, cache, build/output)
+            assert len(all_files) == 5
+
+            # Clean output directory
+            shutil.rmtree(output_dir)
+
+            # Generate with ignore patterns
+            ignore_patterns = ["*.tmp", "*.pyc", "build/*"]
+            filtered_files = generate_directory(
+                source_dir,
+                output_dir,
+                template_dirs=[template_dir],
+                ignore_patterns=ignore_patterns,
+            )
+
+            # Should only have 1 generated file + 1 passthrough (README.md)
+            assert len(filtered_files) == 2
+
+            # Check that correct files were generated/copied
+            output_filenames = {f.name for f in filtered_files}
+            assert "os_module.md" in output_filenames  # Generated from frontmatter
+            assert "README.md" in output_filenames  # Passthrough file
+
+            # Check that ignored files were not copied
+            assert not (output_dir / "temp.tmp").exists()
+            assert not (output_dir / "cache.pyc").exists()
+            assert not (output_dir / "build").exists()
+
+    def test_generate_with_ignore_patterns_file_source(self):
+        """Tests that generate function ignores patterns work for file sources."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create template
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+            template_file = template_dir / "test.md.jinja2"
+            template_file.write_text("# {{ obj.name }}")
+
+            # Create source file
+            source_file = temp_path / "api.md"
+            source_content = textwrap.dedent("""
+                ---
+                template: "test.md.jinja2"
+                output:
+                  - filename: "os_module.md"
+                    griffe_target: "os"
+                ---
+                Content.
+            """).strip()
+            source_file.write_text(source_content)
+
+            output_dir = temp_path / "output"
+
+            # Generate with ignore patterns (should work even for single files)
+            ignore_patterns = ["*.tmp", "*.pyc"]
+            generated_files = generate(
+                source_file,
+                output_dir,
+                template_dirs=[template_dir],
+                ignore_patterns=ignore_patterns,
+            )
+
+            # Single file generation should work regardless of ignore patterns
+            assert len(generated_files) == 1
+            assert generated_files[0].name == "os_module.md"
+
+    def test_ignore_patterns_case_sensitivity(self):
+        """Tests that ignore patterns are case-sensitive."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create files with different cases
+            (temp_path / "file.TMP").write_text("Upper case tmp")
+            (temp_path / "file.tmp").write_text("Lower case tmp")
+            (temp_path / "FILE.tmp").write_text("Mixed case")
+
+            # Test case-sensitive matching
+            ignore_patterns = ["*.tmp"]  # Should only match lowercase tmp extension
+            filtered_files = find_all_files(temp_path, ignore_patterns)
+
+            # Should find TMP (different extension) but not files with .tmp extension
+            assert len(filtered_files) == 1
+            filenames = [f.name for f in filtered_files]
+            assert "file.TMP" in filenames
+            # These should be filtered out (ignored)
+            assert "FILE.tmp" not in filenames
+            assert "file.tmp" not in filenames
+
+    def test_ignore_patterns_with_subdirectories(self):
+        """Tests ignore patterns work correctly with nested directory structures."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create nested structure
+            (temp_path / "root.md").write_text("Root file")
+
+            docs_dir = temp_path / "docs"
+            docs_dir.mkdir()
+            (docs_dir / "guide.md").write_text("Guide")
+
+            # Create cache in multiple locations
+            (temp_path / "cache.tmp").write_text("Root cache")
+            cache_subdir = docs_dir / "cache"
+            cache_subdir.mkdir()
+            (cache_subdir / "data.tmp").write_text("Sub cache")
+
+            # Test pattern that matches files in subdirectories
+            ignore_patterns = ["cache/*", "*.tmp"]
+            filtered_files = find_all_files(temp_path, ignore_patterns)
+
+            # Should only find non-cache, non-tmp files
+            assert len(filtered_files) == 2
+            filenames = [f.name for f in filtered_files]
+            assert "root.md" in filenames
+            assert "guide.md" in filenames

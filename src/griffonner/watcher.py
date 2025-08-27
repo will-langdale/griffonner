@@ -1,5 +1,6 @@
 """File system watcher for Griffonner."""
 
+import fnmatch
 import logging
 import time
 from pathlib import Path
@@ -26,6 +27,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         output_dir: Path,
         template_dirs: Optional[List[Path]] = None,
         plugin_manager: Optional["PluginManager"] = None,
+        ignore_patterns: Optional[List[str]] = None,
     ) -> None:
         """Initialise the event handler.
 
@@ -34,18 +36,50 @@ class GriffonnerEventHandler(FileSystemEventHandler):
             output_dir: Output directory for generated files
             template_dirs: Additional template directories
             plugin_manager: Optional plugin manager for processors/filters
+            ignore_patterns: Glob patterns to ignore
         """
         super().__init__()
         self.source_dir = source_dir
         self.output_dir = output_dir
         self.template_dirs = template_dirs or []
         self.plugin_manager = plugin_manager
+        self.ignore_patterns = ignore_patterns or []
 
         logger.info(f"Initialised event handler - source: {source_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
+        logger.info(f"Ignore patterns: {self.ignore_patterns}")
         logger.info(
             f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
         )
+
+    def _should_ignore(self, file_path: Path) -> bool:
+        """Check if file should be ignored based on ignore patterns.
+
+        Args:
+            file_path: Path to check
+
+        Returns:
+            True if file should be ignored
+        """
+        if not self.ignore_patterns:
+            return False
+
+        try:
+            relative_path = file_path.relative_to(self.source_dir)
+            # Normalise path for consistent matching across platforms
+            relative_str = str(relative_path).replace("\\", "/")
+
+            for pattern in self.ignore_patterns:
+                if fnmatch.fnmatch(relative_str, pattern):
+                    logger.info(
+                        f"Ignoring file {file_path} (matches pattern '{pattern}')"
+                    )
+                    return True
+        except ValueError:
+            # File is not within source directory
+            return True
+
+        return False
 
     def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events.
@@ -61,6 +95,10 @@ class GriffonnerEventHandler(FileSystemEventHandler):
 
         file_path = Path(str(event.src_path))
         logger.info(f"File modified: {file_path}")
+
+        # Check if file should be ignored
+        if self._should_ignore(file_path):
+            return
 
         # Process all files (frontmatter and passthrough)
         logger.info(f"Processing file modification: {file_path}")
@@ -80,6 +118,10 @@ class GriffonnerEventHandler(FileSystemEventHandler):
 
         file_path = Path(str(event.src_path))
         logger.info(f"File created: {file_path}")
+
+        # Check if file should be ignored
+        if self._should_ignore(file_path):
+            return
 
         # Process all files (frontmatter and passthrough)
         logger.info(f"Processing file creation: {file_path}")
@@ -158,6 +200,7 @@ class DocumentationWatcher:
         output_dir: Path,
         template_dirs: Optional[List[Path]] = None,
         plugin_manager: Optional["PluginManager"] = None,
+        ignore_patterns: Optional[List[str]] = None,
     ) -> None:
         """Initialise the documentation watcher.
 
@@ -166,23 +209,30 @@ class DocumentationWatcher:
             output_dir: Output directory for generated files
             template_dirs: Additional template directories
             plugin_manager: Optional plugin manager for processors/filters
+            ignore_patterns: Glob patterns to ignore
         """
         self.source_dir = source_dir.resolve()
         self.output_dir = output_dir.resolve()
         self.template_dirs = template_dirs or []
         self.plugin_manager = plugin_manager
+        self.ignore_patterns = ignore_patterns or []
 
         logger.info("Initialising DocumentationWatcher")
         logger.info(f"Source directory: {self.source_dir}")
         logger.info(f"Output directory: {self.output_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
+        logger.info(f"Ignore patterns: {self.ignore_patterns}")
         logger.info(
             f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
         )
 
         self.observer = Observer()
         self.event_handler = GriffonnerEventHandler(
-            self.source_dir, self.output_dir, self.template_dirs, self.plugin_manager
+            self.source_dir,
+            self.output_dir,
+            self.template_dirs,
+            self.plugin_manager,
+            self.ignore_patterns,
         )
         logger.info("DocumentationWatcher initialised")
 
