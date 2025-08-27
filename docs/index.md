@@ -189,7 +189,7 @@ griffonner watch docs/pages/ --output docs/generated
 griffonner watch docs/pages/ --template-dir custom-templates/
 ```
 
-When files with frontmatter are modified, Griffonner automatically regenerates the corresponding output files.
+When files are modified, Griffonner automatically processes them - regenerating output files for those with frontmatter and copying files without frontmatter directly.
 
 ### Template discovery
 

@@ -9,8 +9,7 @@ import typer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from .core import generate_file
-from .frontmatter import find_frontmatter_files
+from .core import categorise_files, copy_file_passthrough, generate_file
 
 if TYPE_CHECKING:
     from .plugins.manager import PluginManager
@@ -63,7 +62,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         file_path = Path(str(event.src_path))
         logger.info(f"File modified: {file_path}")
 
-        # Process all files that might have frontmatter
+        # Process all files (frontmatter and passthrough)
         logger.info(f"Processing file modification: {file_path}")
         self._regenerate_file(file_path)
 
@@ -82,7 +81,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         file_path = Path(str(event.src_path))
         logger.info(f"File created: {file_path}")
 
-        # Process all files that might have frontmatter
+        # Process all files (frontmatter and passthrough)
         logger.info(f"Processing file creation: {file_path}")
         self._regenerate_file(file_path)
 
@@ -92,42 +91,62 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         Args:
             file_path: Path to the file that changed
         """
-        logger.info(f"Attempting to regenerate file: {file_path}")
+        logger.info(f"Attempting to process file: {file_path}")
 
         try:
-            # Check if file is within our source directory and has frontmatter
+            # Check if file is within our source directory
             logger.info("Checking if file is within source directory")
             relative_path = file_path.relative_to(self.source_dir)
             logger.info(f"File relative path: {relative_path}")
 
-            # Verify the file has frontmatter by checking if it's in our list
-            logger.info("Checking for frontmatter files in source directory")
-            frontmatter_files = find_frontmatter_files(self.source_dir)
-            if file_path not in frontmatter_files:
-                logger.info("File not in frontmatter files list, ignoring")
-                return  # Not a frontmatter file, ignore
+            # Check if file is readable (skip if not)
+            try:
+                file_path.read_text(encoding="utf-8", errors="strict")
+            except (UnicodeDecodeError, PermissionError, OSError) as e:
+                logger.warning(f"Skipping unreadable file {file_path}: {e}")
+                return
 
-            logger.info("File confirmed as frontmatter file, proceeding")
-            # Generate the file
-            generated_files = generate_file(
-                file_path, self.output_dir, self.template_dirs, self.plugin_manager
-            )
+            # Categorise the file
+            logger.info("Categorising file type")
+            frontmatter_files, passthrough_files = categorise_files([file_path])
 
-            file_count = len(generated_files)
-            typer.echo(f"🔄 Regenerated {file_count} files from {relative_path}:")
-            for generated_file in generated_files:
-                rel_generated = generated_file.relative_to(self.output_dir)
-                typer.echo(f"  📄 {rel_generated}")
+            if frontmatter_files:
+                # File has frontmatter - generate using templates
+                logger.info("File confirmed as frontmatter file, generating")
+                generated_files = generate_file(
+                    file_path, self.output_dir, self.template_dirs, self.plugin_manager
+                )
 
-            logger.info(f"File regeneration successful: {file_count} files generated")
+                file_count = len(generated_files)
+                typer.echo(f"🔄 Regenerated {file_count} files from {relative_path}:")
+                for generated_file in generated_files:
+                    rel_generated = generated_file.relative_to(self.output_dir)
+                    typer.echo(f"  📄 {rel_generated}")
+
+                logger.info(f"File generation successful: {file_count} files generated")
+
+            elif passthrough_files:
+                # File is passthrough - copy directly
+                logger.info("File confirmed as passthrough file, copying")
+                copied_file = copy_file_passthrough(
+                    file_path, self.source_dir, self.output_dir
+                )
+
+                rel_copied = copied_file.relative_to(self.output_dir)
+                typer.echo(f"🔄 Copied passthrough file {relative_path}:")
+                typer.echo(f"  📄 {rel_copied}")
+
+                logger.info(f"File copy successful: {file_path} -> {copied_file}")
+            else:
+                logger.warning(f"File {file_path} could not be categorised, ignoring")
 
         except ValueError as e:
             # File is not within source directory, ignore
             logger.info(f"File not within source directory, ignoring ({e})")
             return
         except Exception as e:
-            logger.exception(f"File regeneration failed for {file_path}")
-            typer.echo(f"❌ Failed to regenerate {file_path}: {e}", err=True)
+            logger.exception(f"File processing failed for {file_path}")
+            typer.echo(f"❌ Failed to process {file_path}: {e}", err=True)
 
 
 class DocumentationWatcher:

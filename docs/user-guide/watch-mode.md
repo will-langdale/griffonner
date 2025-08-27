@@ -53,10 +53,10 @@ Watch mode monitors:
 
 - **File types**: `.md` and `.markdown` files only
 - **Scope**: All files recursively in the source directory
-- **Filtering**: Only processes files with valid frontmatter
+- **Processing**: Files with frontmatter are generated using templates, files without frontmatter are copied directly to output (passthrough)
 - **Events**: File modifications and new file creation
 
-Files without frontmatter are ignored, so you can have regular markdown files alongside Griffonner source files.
+All files are processed - those with frontmatter generate documentation using templates, while regular files are copied directly to maintain your complete documentation structure.
 
 ## Development workflow
 
@@ -220,7 +220,7 @@ Watch mode uses Python's `watchdog` library for efficient file monitoring:
 
 For projects with many files:
 
-- Only files with frontmatter are processed
+- Files with frontmatter are generated using templates, files without are copied directly
 - Generation is incremental (only changed files)
 - Template loading is cached between runs
 

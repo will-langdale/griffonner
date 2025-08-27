@@ -1,11 +1,11 @@
 """Main generation logic for Griffonner."""
 
 import logging
-import textwrap
+import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from .frontmatter import find_frontmatter_files, parse_frontmatter_file
+from .frontmatter import parse_frontmatter_file
 from .griffe_wrapper import load_griffe_object
 from .plugins.manager import PluginManager
 from .templates import TemplateLoader
@@ -15,6 +15,127 @@ logger = logging.getLogger("griffonner.core")
 
 class GenerationError(Exception):
     """Base exception for generation errors."""
+
+
+def find_all_files(directory: Path) -> List[Path]:
+    """Find all files in a directory recursively.
+
+    Args:
+        directory: Directory to search
+
+    Returns:
+        List of all file paths
+
+    Raises:
+        NotADirectoryError: If directory doesn't exist or isn't a directory
+    """
+    logger.info(f"Finding all files in: {directory}")
+
+    if not directory.exists():
+        logger.error(f"Directory not found: {directory}")
+        raise NotADirectoryError(f"Directory not found: {directory}")
+
+    if not directory.is_dir():
+        logger.error(f"Path is not a directory: {directory}")
+        raise NotADirectoryError(f"Path is not a directory: {directory}")
+
+    all_files = []
+    skipped_files = []
+
+    for file_path in directory.rglob("*"):
+        if not file_path.is_file():
+            continue
+        try:
+            # Quick check that file is readable
+            file_path.read_text(encoding="utf-8", errors="strict")
+            all_files.append(file_path)
+            logger.info(f"Found file: {file_path}")
+        except (UnicodeDecodeError, PermissionError, OSError) as e:
+            logger.warning(f"Skipping unreadable file {file_path}: {e}")
+            skipped_files.append(file_path)
+            continue
+
+    logger.info(f"Found {len(all_files)} files, {len(skipped_files)} skipped")
+    return sorted(all_files)
+
+
+def categorise_files(files: List[Path]) -> Tuple[List[Path], List[Path]]:
+    """Categorise files into frontmatter files and passthrough files.
+
+    Args:
+        files: List of file paths to categorise
+
+    Returns:
+        Tuple of (frontmatter_files, passthrough_files)
+    """
+    logger.info(f"Categorising {len(files)} files")
+
+    frontmatter_files = []
+    passthrough_files = []
+
+    for file_path in files:
+        try:
+            content = file_path.read_text(encoding="utf-8")
+            if content.startswith("---\n"):
+                frontmatter_files.append(file_path)
+                logger.info(f"Frontmatter file: {file_path}")
+            else:
+                passthrough_files.append(file_path)
+                logger.info(f"Passthrough file: {file_path}")
+        except (UnicodeDecodeError, PermissionError, OSError) as e:
+            logger.warning(f"Error reading {file_path}, treating as passthrough: {e}")
+            passthrough_files.append(file_path)
+
+    logger.info(
+        f"Categorised: {len(frontmatter_files)} frontmatter, "
+        f"{len(passthrough_files)} passthrough"
+    )
+    return frontmatter_files, passthrough_files
+
+
+def copy_file_passthrough(
+    source_file: Path, source_dir: Path, output_dir: Path
+) -> Path:
+    """Copy a file from source to output preserving directory structure.
+
+    Args:
+        source_file: Source file path
+        source_dir: Base source directory
+        output_dir: Base output directory
+
+    Returns:
+        Path to the copied output file
+
+    Raises:
+        GenerationError: If copy fails
+    """
+    logger.info(f"Copying passthrough file: {source_file}")
+
+    # Calculate relative path from source_dir to source_file
+    try:
+        relative_path = source_file.relative_to(source_dir)
+    except ValueError as e:
+        raise GenerationError(
+            f"Source file {source_file} is not within source directory {source_dir}"
+        ) from e
+
+    # Calculate target output file path
+    output_file = output_dir / relative_path
+    logger.info(f"Target output path: {output_file}")
+
+    # Create parent directories if needed
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        # Copy the file
+        shutil.copy2(source_file, output_file)
+        logger.info(f"Successfully copied: {source_file} -> {output_file}")
+        return output_file
+    except (OSError, IOError) as e:
+        logger.exception(f"Failed to copy {source_file} to {output_file}")
+        raise GenerationError(
+            f"Failed to copy {source_file} to {output_file}: {e}"
+        ) from e
 
 
 def generate_file(
@@ -158,13 +279,13 @@ def generate_directory(
     """Generate documentation from all files in a directory.
 
     Args:
-        pages_dir: Directory containing source files with frontmatter
+        pages_dir: Directory containing source files (with or without frontmatter)
         output_dir: Base output directory
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
 
     Returns:
-        List of all generated output file paths
+        List of all generated and copied output file paths
 
     Raises:
         GenerationError: If generation fails
@@ -172,53 +293,80 @@ def generate_directory(
     logger.info(f"Generating documentation from directory: {pages_dir}")
     logger.info(f"Output directory: {output_dir}")
 
-    # Find all frontmatter files
-    logger.info("Searching for frontmatter files")
-    source_files = find_frontmatter_files(pages_dir)
-    logger.info(f"Found {len(source_files)} frontmatter files")
+    # Find all files
+    logger.info("Searching for all files")
+    all_files = find_all_files(pages_dir)
+    logger.info(f"Found {len(all_files)} total files")
 
-    if not source_files:
-        logger.error(f"No frontmatter files found in {pages_dir}")
-        error_msg = textwrap.dedent(f"""\
-            No frontmatter files found in {pages_dir}
+    if not all_files:
+        logger.warning(f"No files found in {pages_dir}")
+        return []
 
-            Looking for files that start with:
-            ---
-            template: "python/default/module.md.jinja2"
-            output:
-              filename: "api.md"
-              griffe_target: "mypackage.module"
-            ---""")
-        raise GenerationError(error_msg)
+    # Categorise files into frontmatter and passthrough
+    logger.info("Categorising files")
+    frontmatter_files, passthrough_files = categorise_files(all_files)
+    logger.info(
+        f"Files: {len(frontmatter_files)} frontmatter, "
+        f"{len(passthrough_files)} passthrough"
+    )
 
-    all_generated = []
+    all_output_files = []
     errors = []
 
-    # Generate each file, collecting errors
-    logger.info(f"Processing {len(source_files)} source files")
-    for i, source_file in enumerate(source_files):
-        logger.info(f"Processing file {i+1}/{len(source_files)}: {source_file}")
-        try:
-            generated = generate_file(
-                source_file, output_dir, template_dirs, plugin_manager
+    # Process frontmatter files (generate using templates)
+    if frontmatter_files:
+        logger.info(f"Processing {len(frontmatter_files)} frontmatter files")
+        for i, source_file in enumerate(frontmatter_files):
+            logger.info(
+                f"Processing frontmatter file {i+1}/{len(frontmatter_files)}: "
+                f"{source_file}"
             )
-            all_generated.extend(generated)
-            logger.info(f"Processed {source_file}: {len(generated)} files generated")
-        except Exception as e:
-            logger.exception(f"Failed to process {source_file}")
-            errors.append(f"Failed to generate {source_file}: {e}")
+            try:
+                generated = generate_file(
+                    source_file, output_dir, template_dirs, plugin_manager
+                )
+                all_output_files.extend(generated)
+                logger.info(f"Generated {len(generated)} files from {source_file}")
+            except Exception as e:
+                logger.exception(f"Failed to process frontmatter file {source_file}")
+                errors.append(f"Failed to generate {source_file}: {e}")
+
+    # Process passthrough files (copy directly)
+    if passthrough_files:
+        logger.info(f"Processing {len(passthrough_files)} passthrough files")
+        for i, source_file in enumerate(passthrough_files):
+            logger.info(
+                f"Processing passthrough file {i+1}/{len(passthrough_files)}: "
+                f"{source_file}"
+            )
+            try:
+                copied_file = copy_file_passthrough(source_file, pages_dir, output_dir)
+                all_output_files.append(copied_file)
+                logger.info(f"Copied passthrough file: {source_file} -> {copied_file}")
+            except Exception as e:
+                logger.exception(f"Failed to copy passthrough file {source_file}")
+                errors.append(f"Failed to copy {source_file}: {e}")
 
     # If there were errors, include summary
     if errors:
-        logger.error(f"Directory generation completed with {len(errors)} errors")
-        error_parts = [f"Generation completed with {len(errors)} errors:"]
+        logger.error(f"Directory processing completed with {len(errors)} errors")
+        error_parts = [f"Processing completed with {len(errors)} errors:"]
         error_parts.extend(f"  - {err}" for err in errors)
         error_msg = "\n".join(error_parts)
         raise GenerationError(error_msg)
 
-    generated_count = len(all_generated)
-    logger.info(f"Directory generation completed: {generated_count} total files")
-    return all_generated
+    output_count = len(all_output_files)
+    logger.info(f"Directory processing completed: {output_count} total output files")
+    generated_count = len(
+        [
+            f
+            for f in all_output_files
+            if any(str(f).endswith(ext) for ext in [".md", ".html", ".rst"])
+        ]
+    )
+    logger.info(f"  - Generated: {generated_count}")
+    logger.info(f"  - Copied: {len(passthrough_files)}")
+    return all_output_files
 
 
 def generate(
