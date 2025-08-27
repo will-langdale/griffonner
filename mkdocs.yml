@@ -14,6 +14,7 @@ nav:
   - Using processors: plugins/using-processors.md
   - Using filters: plugins/using-filters.md
   - Managing plugins: plugins/managing-plugins.md
+  - AI plugin development: plugins/ai-plugin-development.md
 - Templates:
   - Overview: template-guides/index.md
   - Template development: template-guides/template-development.md
