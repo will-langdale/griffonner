@@ -14,7 +14,7 @@ Griffonner is a template-first Python documentation generator that gets out of y
 
 ### `generate`
 
-Generate documentation from source files with frontmatter.
+Generate documentation from source files. Files with frontmatter are processed using templates, while files without frontmatter are copied directly to the output (passthrough).
 
 ```
 griffonner generate [OPTIONS] SOURCE
@@ -22,7 +22,7 @@ griffonner generate [OPTIONS] SOURCE
 
 **Arguments:**
 
-- `SOURCE` - Source file or directory containing files with frontmatter
+- `SOURCE` - Source file or directory containing files (with or without frontmatter)
 
 **Options:**
 
@@ -89,7 +89,7 @@ griffonner watch docs/pages/ --local-plugins myproject.docs_plugins
 **Behaviour:**
 
 - Monitors all files in the source directory for changes
-- Only regenerates files that contain valid frontmatter
+- Processes files with frontmatter using templates, copies files without frontmatter directly (passthrough)
 - Automatically creates output directories if they don't exist
 - Shows real-time feedback when files are regenerated
 - Stops with Ctrl+C
@@ -344,8 +344,8 @@ griffonner watch docs/pages/ --verbose
 
 ### Performance
 
-- Watch mode monitors all file types but only processes files with valid frontmatter
-- Only files with valid frontmatter are processed
+- Watch mode monitors all file types and processes both frontmatter and regular files
+- Files with frontmatter are generated using templates, files without are copied directly
 - Generation is incremental - only changed files are regenerated in watch mode
 
 ### Workflow
