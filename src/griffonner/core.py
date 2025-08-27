@@ -59,16 +59,16 @@ def find_all_files(directory: Path) -> List[Path]:
     return sorted(all_files)
 
 
-def categorize_files(files: List[Path]) -> Tuple[List[Path], List[Path]]:
-    """Categorize files into frontmatter files and passthrough files.
+def categorise_files(files: List[Path]) -> Tuple[List[Path], List[Path]]:
+    """Categorise files into frontmatter files and passthrough files.
 
     Args:
-        files: List of file paths to categorize
+        files: List of file paths to categorise
 
     Returns:
         Tuple of (frontmatter_files, passthrough_files)
     """
-    logger.info(f"Categorizing {len(files)} files")
+    logger.info(f"Categorising {len(files)} files")
 
     frontmatter_files = []
     passthrough_files = []
@@ -87,7 +87,7 @@ def categorize_files(files: List[Path]) -> Tuple[List[Path], List[Path]]:
             passthrough_files.append(file_path)
 
     logger.info(
-        f"Categorized: {len(frontmatter_files)} frontmatter, "
+        f"Categorised: {len(frontmatter_files)} frontmatter, "
         f"{len(passthrough_files)} passthrough"
     )
     return frontmatter_files, passthrough_files
@@ -302,9 +302,9 @@ def generate_directory(
         logger.warning(f"No files found in {pages_dir}")
         return []
 
-    # Categorize files into frontmatter and passthrough
-    logger.info("Categorizing files")
-    frontmatter_files, passthrough_files = categorize_files(all_files)
+    # Categorise files into frontmatter and passthrough
+    logger.info("Categorising files")
+    frontmatter_files, passthrough_files = categorise_files(all_files)
     logger.info(
         f"Files: {len(frontmatter_files)} frontmatter, "
         f"{len(passthrough_files)} passthrough"

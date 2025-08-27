@@ -1,5 +1,6 @@
 """Tests for core module."""
 
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -7,7 +8,7 @@ import pytest
 
 from griffonner.core import (
     GenerationError,
-    categorize_files,
+    categorise_files,
     copy_file_passthrough,
     find_all_files,
     generate,
@@ -47,17 +48,18 @@ Custom variable: {{ custom_vars.test_var }}
             template_file.write_text(template_content)
 
             # Create source file with frontmatter
-            source_content = """---
-template: "test.md.jinja2"
-output:
-  - filename: "os_module.md"
-    griffe_target: "os"
-custom_vars:
-  test_var: "test value"
----
+            source_content = textwrap.dedent("""
+                ---
+                template: "test.md.jinja2"
+                output:
+                  - filename: "os_module.md"
+                    griffe_target: "os"
+                custom_vars:
+                  test_var: "test value"
+                ---
 
-This is source content.
-"""
+                This is source content.
+            """).strip()
 
             source_file = temp_path / "source.md"
             source_file.write_text(source_content)
@@ -437,23 +439,25 @@ class TestFindAllFiles:
                 find_all_files(file_path)
 
 
-class TestCategorizeFiles:
-    """Tests for categorize_files function."""
+class TestCategoriseFiles:
+    """Tests for categorise_files function."""
 
-    def test_categorize_mixed_files(self):
-        """Tests categorizing a mix of frontmatter and regular files."""
+    def test_categorise_mixed_files(self):
+        """Tests categorising a mix of frontmatter and regular files."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
             # Create frontmatter file
             frontmatter_file = temp_path / "with_frontmatter.md"
-            frontmatter_content = """---
-template: "test.md.jinja2"
-output:
-  - filename: "output.md"
-    griffe_target: "os"
----
-Content here."""
+            frontmatter_content = textwrap.dedent("""
+                ---
+                template: "test.md.jinja2"
+                output:
+                  - filename: "output.md"
+                    griffe_target: "os"
+                ---
+                Content here.
+            """).strip()
             frontmatter_file.write_text(frontmatter_content)
 
             # Create regular files
@@ -464,7 +468,7 @@ Content here."""
             sidebar_file.write_text("## Sidebar content")
 
             files = [frontmatter_file, regular_file, sidebar_file]
-            frontmatter_files, passthrough_files = categorize_files(files)
+            frontmatter_files, passthrough_files = categorise_files(files)
 
             assert len(frontmatter_files) == 1
             assert frontmatter_file in frontmatter_files
@@ -473,8 +477,8 @@ Content here."""
             assert regular_file in passthrough_files
             assert sidebar_file in passthrough_files
 
-    def test_categorize_only_frontmatter_files(self):
-        """Tests categorizing only frontmatter files."""
+    def test_categorise_only_frontmatter_files(self):
+        """Tests categorising only frontmatter files."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -482,24 +486,26 @@ Content here."""
             files = []
             for i in range(3):
                 file_path = temp_path / f"frontmatter_{i}.md"
-                file_content = f"""---
-template: "test.md.jinja2"
-output:
-  - filename: "output_{i}.md"
-    griffe_target: "os"
----
-Content {i}."""
+                file_content = textwrap.dedent(f"""
+                    ---
+                    template: "test.md.jinja2"
+                    output:
+                      - filename: "output_{i}.md"
+                        griffe_target: "os"
+                    ---
+                    Content {i}.
+                """).strip()
                 file_path.write_text(file_content)
                 files.append(file_path)
 
-            frontmatter_files, passthrough_files = categorize_files(files)
+            frontmatter_files, passthrough_files = categorise_files(files)
 
             assert len(frontmatter_files) == 3
             assert len(passthrough_files) == 0
             assert all(f in frontmatter_files for f in files)
 
-    def test_categorize_only_regular_files(self):
-        """Tests categorizing only regular files."""
+    def test_categorise_only_regular_files(self):
+        """Tests categorising only regular files."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -510,15 +516,15 @@ Content {i}."""
                 file_path.write_text(f"# Regular file {i}")
                 files.append(file_path)
 
-            frontmatter_files, passthrough_files = categorize_files(files)
+            frontmatter_files, passthrough_files = categorise_files(files)
 
             assert len(frontmatter_files) == 0
             assert len(passthrough_files) == 3
             assert all(f in passthrough_files for f in files)
 
-    def test_categorize_empty_list(self):
-        """Tests categorizing empty file list."""
-        frontmatter_files, passthrough_files = categorize_files([])
+    def test_categorise_empty_list(self):
+        """Tests categorising empty file list."""
+        frontmatter_files, passthrough_files = categorise_files([])
         assert len(frontmatter_files) == 0
         assert len(passthrough_files) == 0
 
@@ -649,15 +655,17 @@ class TestGenerateDirectoryPassthrough:
 
             # Frontmatter file
             frontmatter_file = source_dir / "api.md"
-            frontmatter_content = """---
-template: "test.md.jinja2"
-output:
-  - filename: "os_module.md"
-    griffe_target: "os"
-custom_vars:
-  test_var: "API Documentation"
----
-Source content here."""
+            frontmatter_content = textwrap.dedent("""
+                ---
+                template: "test.md.jinja2"
+                output:
+                  - filename: "os_module.md"
+                    griffe_target: "os"
+                custom_vars:
+                  test_var: "API Documentation"
+                ---
+                Source content here.
+            """).strip()
             frontmatter_file.write_text(frontmatter_content)
 
             # Regular passthrough files

@@ -9,7 +9,7 @@ import typer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from .core import categorize_files, copy_file_passthrough, generate_file
+from .core import categorise_files, copy_file_passthrough, generate_file
 
 if TYPE_CHECKING:
     from .plugins.manager import PluginManager
@@ -106,9 +106,9 @@ class GriffonnerEventHandler(FileSystemEventHandler):
                 logger.warning(f"Skipping unreadable file {file_path}: {e}")
                 return
 
-            # Categorize the file
-            logger.info("Categorizing file type")
-            frontmatter_files, passthrough_files = categorize_files([file_path])
+            # Categorise the file
+            logger.info("Categorising file type")
+            frontmatter_files, passthrough_files = categorise_files([file_path])
 
             if frontmatter_files:
                 # File has frontmatter - generate using templates
@@ -138,7 +138,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
 
                 logger.info(f"File copy successful: {file_path} -> {copied_file}")
             else:
-                logger.warning(f"File {file_path} could not be categorized, ignoring")
+                logger.warning(f"File {file_path} could not be categorised, ignoring")
 
         except ValueError as e:
             # File is not within source directory, ignore
