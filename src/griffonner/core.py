@@ -4,8 +4,9 @@ import fnmatch
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
+from .config import merge_griffe_config
 from .frontmatter import parse_frontmatter_file
 from .griffe_wrapper import load_griffe_object
 from .plugins.manager import PluginManager
@@ -173,6 +174,7 @@ def generate_file(
     output_dir: Path,
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
+    default_griffe_config: Optional[Dict[str, Any]] = None,
 ) -> List[Path]:
     """Generate documentation files from a source file with frontmatter.
 
@@ -181,6 +183,7 @@ def generate_file(
         output_dir: Base output directory
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
+        default_griffe_config: Default Griffe configuration to merge with frontmatter
 
     Returns:
         List of generated output file paths
@@ -224,11 +227,18 @@ def generate_file(
         logger.info(f"Griffe target: {output_item.griffe_target}")
 
         try:
+            # Merge default Griffe config with frontmatter config
+            default_config = default_griffe_config or {}
+            merged_griffe_config = merge_griffe_config(
+                default_config, parsed.frontmatter.griffe
+            )
+            logger.info(f"Merged Griffe config: {merged_griffe_config}")
+
             # Load Griffe object for this output
             logger.info(f"Loading Griffe object for: {output_item.griffe_target}")
             griffe_obj = load_griffe_object(
                 output_item.griffe_target,
-                griffe_config=parsed.frontmatter.griffe,
+                griffe_config=merged_griffe_config,
             )
 
             # Prepare initial template context
@@ -306,6 +316,7 @@ def generate_directory(
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
     ignore_patterns: Optional[List[str]] = None,
+    default_griffe_config: Optional[Dict[str, Any]] = None,
 ) -> List[Path]:
     """Generate documentation from all files in a directory.
 
@@ -315,6 +326,7 @@ def generate_directory(
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
         ignore_patterns: Glob patterns to ignore
+        default_griffe_config: Default Griffe configuration to merge with frontmatter
 
     Returns:
         List of all generated and copied output file paths
@@ -355,7 +367,11 @@ def generate_directory(
             )
             try:
                 generated = generate_file(
-                    source_file, output_dir, template_dirs, plugin_manager
+                    source_file,
+                    output_dir,
+                    template_dirs,
+                    plugin_manager,
+                    default_griffe_config,
                 )
                 all_output_files.extend(generated)
                 logger.info(f"Generated {len(generated)} files from {source_file}")
@@ -407,6 +423,7 @@ def generate(
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
     ignore_patterns: Optional[List[str]] = None,
+    default_griffe_config: Optional[Dict[str, Any]] = None,
 ) -> List[Path]:
     """Generate documentation from a file or directory.
 
@@ -416,6 +433,7 @@ def generate(
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
         ignore_patterns: Glob patterns to ignore
+        default_griffe_config: Default Griffe configuration to merge with frontmatter
 
     Returns:
         List of generated output file paths
@@ -432,11 +450,18 @@ def generate(
 
     if source.is_file():
         logger.info("Source is a file, using generate_file")
-        return generate_file(source, output_dir, template_dirs, plugin_manager)
+        return generate_file(
+            source, output_dir, template_dirs, plugin_manager, default_griffe_config
+        )
     elif source.is_dir():
         logger.info("Source is a directory, using generate_directory")
         return generate_directory(
-            source, output_dir, template_dirs, plugin_manager, ignore_patterns
+            source,
+            output_dir,
+            template_dirs,
+            plugin_manager,
+            ignore_patterns,
+            default_griffe_config,
         )
     else:
         logger.error(f"Source is neither file nor directory: {source}")

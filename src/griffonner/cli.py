@@ -7,6 +7,7 @@ from typing import Annotated, List, Optional
 
 import typer
 
+from .config import load_config, merge_config_with_args
 from .core import generate
 from .plugins.manager import PluginManager
 from .templates import TemplateLoader, TemplateValidationError
@@ -62,8 +63,8 @@ def generate_cmd(
         Path, typer.Argument(help="Source file or directory with frontmatter")
     ],
     output_dir: Annotated[
-        Path, typer.Option("--output", "-o", help="Output directory")
-    ] = Path("docs/output"),
+        Optional[Path], typer.Option("--output", "-o", help="Output directory")
+    ] = None,
     template_dirs: Annotated[
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
@@ -79,27 +80,44 @@ def generate_cmd(
         typer.Option("--ignore", help="Glob patterns to ignore in source directory"),
     ] = None,
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """Generate documentation from source files with frontmatter."""
-    template_dirs = template_dirs or []
-    local_plugins = local_plugins or []
-    ignore = ignore or []
+    """Generate documentation from source files with frontmatter.
 
-    if verbose:
-        setup_logging(verbose=True)
-
-    logger.info(f"Beginning generation: source={source}, output={output_dir}")
-    logger.info(f"Template directories: {template_dirs}")
-    logger.info(f"Local plugin modules: {local_plugins}")
-    logger.info(f"Ignore patterns: {ignore}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml.
+    CLI arguments override configuration file values.
+    """
     try:
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(
+            config, output_dir, template_dirs, local_plugins, ignore, verbose
+        )
+
+        # Set up logging based on final verbose setting
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info(
+            f"Beginning generation: source={source}, output={final_config.output_dir}"
+        )
+        logger.info(f"Template directories: {final_config.template_dirs}")
+        logger.info(f"Local plugin modules: {final_config.local_plugins}")
+        logger.info(f"Ignore patterns: {final_config.ignore}")
+        logger.info(f"Default Griffe config: {final_config.griffe}")
+
         # Create plugin manager with local plugin modules
-        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
+        plugin_manager = PluginManager(local_plugin_modules=final_config.local_plugins)
         generated_files = generate(
-            source, output_dir, template_dirs, plugin_manager, ignore
+            source,
+            final_config.output_dir,
+            final_config.template_dirs,
+            plugin_manager,
+            final_config.ignore,
+            final_config.griffe,
         )
 
         typer.echo(f"✅ Generated {len(generated_files)} files:")
@@ -119,24 +137,40 @@ def templates(
         typer.Option("--template-dir", "-t", help="Template directories to search"),
     ] = None,
     pattern: Annotated[
-        str, typer.Option("--pattern", "-p", help="Pattern to match templates")
-    ] = "**/*.jinja2",
+        Optional[str],
+        typer.Option("--pattern", "-p", help="Pattern to match templates"),
+    ] = None,
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """List available templates."""
-    template_dirs = template_dirs or []
+    """List available templates.
 
-    if verbose:
-        setup_logging(verbose=True)
-
-    logger.info(f"Searching for templates with pattern: {pattern}")
-    logger.info(f"Template directories: {template_dirs}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml.
+    CLI arguments override configuration file values.
+    """
     try:
-        loader = TemplateLoader(template_dirs)
-        found_templates = loader.find_templates(pattern)
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(
+            config, None, template_dirs, None, None, verbose
+        )
+
+        # Use pattern from CLI or config
+        final_pattern = (
+            pattern if pattern is not None else final_config.templates.pattern
+        )
+
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info(f"Searching for templates with pattern: {final_pattern}")
+        logger.info(f"Template directories: {final_config.template_dirs}")
+
+        loader = TemplateLoader(final_config.template_dirs)
+        found_templates = loader.find_templates(final_pattern)
 
         if not found_templates:
             typer.echo("No templates found")
@@ -160,20 +194,30 @@ def validate(
         typer.Option("--template-dir", "-t", help="Template directories to search"),
     ] = None,
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """Validate template syntax and structure."""
-    template_dirs = template_dirs or []
+    """Validate template syntax and structure.
 
-    if verbose:
-        setup_logging(verbose=True)
-
-    logger.info(f"Validating template: {template_path}")
-    logger.info(f"Template directories: {template_dirs}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml.
+    CLI arguments override configuration file values.
+    """
     try:
-        loader = TemplateLoader(template_dirs)
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(
+            config, None, template_dirs, None, None, verbose
+        )
+
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info(f"Validating template: {template_path}")
+        logger.info(f"Template directories: {final_config.template_dirs}")
+
+        loader = TemplateLoader(final_config.template_dirs)
         loader.validate_template(template_path)
         typer.echo(f"✅ Template is valid: {template_path}")
 
@@ -191,8 +235,8 @@ def validate(
 def watch(
     source: Annotated[Path, typer.Argument(help="Source directory to watch")],
     output_dir: Annotated[
-        Path, typer.Option("--output", "-o", help="Output directory")
-    ] = Path("docs/output"),
+        Optional[Path], typer.Option("--output", "-o", help="Output directory")
+    ] = None,
     template_dirs: Annotated[
         Optional[List[Path]],
         typer.Option("--template-dir", "-t", help="Additional template directories"),
@@ -208,27 +252,43 @@ def watch(
         typer.Option("--ignore", help="Glob patterns to ignore in source directory"),
     ] = None,
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """Watch source directory for changes and regenerate documentation."""
-    template_dirs = template_dirs or []
-    local_plugins = local_plugins or []
-    ignore = ignore or []
+    """Watch source directory for changes and regenerate documentation.
 
-    if verbose:
-        setup_logging(verbose=True)
-
-    logger.info(f"Starting watch mode: source={source}, output={output_dir}")
-    logger.info(f"Template directories: {template_dirs}")
-    logger.info(f"Local plugin modules: {local_plugins}")
-    logger.info(f"Ignore patterns: {ignore}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml.
+    CLI arguments override configuration file values.
+    """
     try:
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(
+            config, output_dir, template_dirs, local_plugins, ignore, verbose
+        )
+
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info(
+            f"Starting watch mode: source={source}, output={final_config.output_dir}"
+        )
+        logger.info(f"Template directories: {final_config.template_dirs}")
+        logger.info(f"Local plugin modules: {final_config.local_plugins}")
+        logger.info(f"Ignore patterns: {final_config.ignore}")
+        logger.info(f"Default Griffe config: {final_config.griffe}")
+
         # Create plugin manager with local plugin modules
-        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
+        plugin_manager = PluginManager(local_plugin_modules=final_config.local_plugins)
         watcher = DocumentationWatcher(
-            source, output_dir, template_dirs, plugin_manager, ignore
+            source,
+            final_config.output_dir,
+            final_config.template_dirs,
+            plugin_manager,
+            final_config.ignore,
+            final_config.griffe,
         )
         watcher.watch()
     except KeyboardInterrupt:
@@ -249,20 +309,30 @@ def plugins_cmd(
         ),
     ] = None,
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """List all available plugins (processors, filters, bundles)."""
-    local_plugins = local_plugins or []
+    """List all available plugins (processors, filters, bundles).
 
-    if verbose:
-        setup_logging(verbose=True)
-
-    logger.info("Discovering available plugins")
-    logger.info(f"Local plugin modules: {local_plugins}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml.
+    CLI arguments override configuration file values.
+    """
     try:
-        plugin_manager = PluginManager(local_plugin_modules=local_plugins)
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(
+            config, None, None, local_plugins, None, verbose
+        )
+
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info("Discovering available plugins")
+        logger.info(f"Local plugin modules: {final_config.local_plugins}")
+
+        plugin_manager = PluginManager(local_plugin_modules=final_config.local_plugins)
         plugins = plugin_manager.list_plugins()
 
         if not any(plugins.values()):
@@ -299,16 +369,26 @@ def plugins_cmd(
 def bundle_info_cmd(
     bundle_name: Annotated[str, typer.Argument(help="Bundle name to inspect")],
     verbose: Annotated[
-        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
-    ] = False,
+        Optional[bool], typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = None,
 ) -> None:
-    """Show detailed information about a specific bundle."""
-    if verbose:
-        setup_logging(verbose=True)
+    """Show detailed information about a specific bundle.
 
-    logger.info(f"Getting information for bundle: {bundle_name}")
-
+    Configuration is loaded from griffonner.yml/griffonner.yaml or pyproject.toml
+    for verbose setting.
+    """
     try:
+        # Load configuration from file
+        config = load_config()
+
+        # Merge CLI arguments with config file (CLI takes precedence)
+        final_config = merge_config_with_args(config, None, None, None, None, verbose)
+
+        if final_config.verbose:
+            setup_logging(verbose=True)
+
+        logger.info(f"Getting information for bundle: {bundle_name}")
+
         plugin_manager = PluginManager()
         bundle_info = plugin_manager.get_bundle_info(bundle_name)
 

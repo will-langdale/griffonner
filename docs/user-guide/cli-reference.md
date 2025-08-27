@@ -16,6 +16,8 @@ Griffonner is a template-first Python documentation generator that gets out of y
 
 Generate documentation from source files. Files with frontmatter are processed using templates, while files without frontmatter are copied directly to the output (passthrough).
 
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml`. CLI arguments override configuration file values.
+
 ```
 griffonner generate [OPTIONS] SOURCE
 ```
@@ -64,6 +66,8 @@ griffonner generate docs/pages/ --output build/docs --ignore "*.tmp" --ignore ".
 ### `watch`
 
 Watch source directory for changes and regenerate documentation automatically.
+
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml`. CLI arguments override configuration file values.
 
 ```
 griffonner watch [OPTIONS] SOURCE
@@ -115,6 +119,8 @@ griffonner watch docs/pages/ --output build/docs --ignore "build/*" --ignore "*.
 
 List available templates in the search path.
 
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml`. CLI arguments override configuration file values.
+
 ```
 griffonner templates [OPTIONS]
 ```
@@ -150,6 +156,8 @@ griffonner templates --pattern "python/default/*"
 
 Validate template syntax and structure.
 
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml`. CLI arguments override configuration file values.
+
 ```
 griffonner validate [OPTIONS] TEMPLATE_PATH
 ```
@@ -183,6 +191,8 @@ griffonner validate --template-dir custom-templates/ my-custom/template.md.jinja
 
 List installed plugins and their details.
 
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml`. CLI arguments override configuration file values.
+
 ```
 griffonner plugins [OPTIONS]
 ```
@@ -215,6 +225,8 @@ Local plugins are loaded from Python modules you specify. They appear with their
 ### `bundle`
 
 Show information about installed plugin bundles.
+
+Configuration is loaded from `griffonner.yml`/`griffonner.yaml` or `pyproject.toml` for verbose setting.
 
 ```
 griffonner bundle [OPTIONS] [BUNDLE_NAME]
@@ -274,11 +286,17 @@ Currently, Griffonner doesn't use any environment variables for configuration.
 
 ### Configuration files
 
-Griffonner doesn't use configuration files. All configuration is done through:
+Griffonner supports configuration files to avoid repeating CLI arguments and set project defaults.
 
-- Command-line options
-- Frontmatter in source files
-- Template directory structure
+For complete information about configuration files, file formats, all available options, precedence rules, and examples, see the dedicated **[Configuration guide](configuration.md)**.
+
+**Quick summary:**
+- **File formats**: `griffonner.yml`, `griffonner.yaml`, or `pyproject.toml` with `[tool.griffonner]` section
+- **Discovery order**: `.yml` → `.yaml` → `pyproject.toml`
+- **Precedence**: Built-in defaults → Configuration file → CLI arguments → Frontmatter (Griffe only)
+- **Key feature**: Set default Griffe options for your entire project
+
+**CLI arguments always override configuration file values.**
 
 ## Output structure
 

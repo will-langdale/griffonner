@@ -7,6 +7,7 @@ nav:
 - Home: index.md
 - User guide:
   - Getting started: home/getting-started.md
+  - Configuration: user-guide/configuration.md
   - Frontmatter reference: user-guide/frontmatter-reference.md
   - CLI reference: user-guide/cli-reference.md
   - Watch mode: user-guide/watch-mode.md

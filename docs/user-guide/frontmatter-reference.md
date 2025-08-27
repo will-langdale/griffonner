@@ -152,6 +152,8 @@ processors:
 
 Griffe configuration with loader options and method calls. This structure mirrors Griffe's API directly.
 
+**Note**: You can set default Griffe options for your entire project using configuration files. See the [Configuration guide](configuration.md#default-griffe-configuration) for details on project-wide Griffe defaults.
+
 ```yaml
 griffe:
   loader:
