@@ -4,7 +4,7 @@ import fnmatch
 import logging
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import typer
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -28,6 +28,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         template_dirs: Optional[List[Path]] = None,
         plugin_manager: Optional["PluginManager"] = None,
         ignore_patterns: Optional[List[str]] = None,
+        default_griffe_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialise the event handler.
 
@@ -37,6 +38,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
             template_dirs: Additional template directories
             plugin_manager: Optional plugin manager for processors/filters
             ignore_patterns: Glob patterns to ignore
+            default_griffe_config: Default Griffe config to merge with frontmatter
         """
         super().__init__()
         self.source_dir = source_dir
@@ -44,10 +46,12 @@ class GriffonnerEventHandler(FileSystemEventHandler):
         self.template_dirs = template_dirs or []
         self.plugin_manager = plugin_manager
         self.ignore_patterns = ignore_patterns or []
+        self.default_griffe_config = default_griffe_config or {}
 
         logger.info(f"Initialised event handler - source: {source_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
         logger.info(f"Ignore patterns: {self.ignore_patterns}")
+        logger.info(f"Default Griffe config: {self.default_griffe_config}")
         logger.info(
             f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
         )
@@ -156,7 +160,11 @@ class GriffonnerEventHandler(FileSystemEventHandler):
                 # File has frontmatter - generate using templates
                 logger.info("File confirmed as frontmatter file, generating")
                 generated_files = generate_file(
-                    file_path, self.output_dir, self.template_dirs, self.plugin_manager
+                    file_path,
+                    self.output_dir,
+                    self.template_dirs,
+                    self.plugin_manager,
+                    self.default_griffe_config,
                 )
 
                 file_count = len(generated_files)
@@ -201,6 +209,7 @@ class DocumentationWatcher:
         template_dirs: Optional[List[Path]] = None,
         plugin_manager: Optional["PluginManager"] = None,
         ignore_patterns: Optional[List[str]] = None,
+        default_griffe_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialise the documentation watcher.
 
@@ -210,18 +219,21 @@ class DocumentationWatcher:
             template_dirs: Additional template directories
             plugin_manager: Optional plugin manager for processors/filters
             ignore_patterns: Glob patterns to ignore
+            default_griffe_config: Default Griffe config to merge with frontmatter
         """
         self.source_dir = source_dir.resolve()
         self.output_dir = output_dir.resolve()
         self.template_dirs = template_dirs or []
         self.plugin_manager = plugin_manager
         self.ignore_patterns = ignore_patterns or []
+        self.default_griffe_config = default_griffe_config or {}
 
         logger.info("Initialising DocumentationWatcher")
         logger.info(f"Source directory: {self.source_dir}")
         logger.info(f"Output directory: {self.output_dir}")
         logger.info(f"Template directories: {self.template_dirs}")
         logger.info(f"Ignore patterns: {self.ignore_patterns}")
+        logger.info(f"Default Griffe config: {self.default_griffe_config}")
         logger.info(
             f"Plugin manager: {'provided' if plugin_manager else 'not provided'}"
         )
@@ -233,6 +245,7 @@ class DocumentationWatcher:
             self.template_dirs,
             self.plugin_manager,
             self.ignore_patterns,
+            self.default_griffe_config,
         )
         logger.info("DocumentationWatcher initialised")
 
