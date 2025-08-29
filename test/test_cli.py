@@ -57,9 +57,7 @@ Content.
             assert "test.md" in result.stdout
 
             # Verify file was actually created
-            # Core logic creates subdirectory based on source file's parent
-            expected_subdir = source_file.parent.name
-            output_file = output_dir / expected_subdir / "test.md"
+            output_file = output_dir / "test.md"
             assert output_file.exists()
 
     def test_generate_directory_success(self):

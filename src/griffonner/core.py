@@ -171,6 +171,7 @@ def copy_file_passthrough(
 
 def generate_file(
     source_file: Path,
+    source_dir: Path,
     output_dir: Path,
     template_dirs: Optional[List[Path]] = None,
     plugin_manager: Optional[PluginManager] = None,
@@ -180,6 +181,7 @@ def generate_file(
 
     Args:
         source_file: Path to source file with frontmatter
+        source_dir: Base source directory for calculating relative paths
         output_dir: Base output directory
         template_dirs: Additional template search directories
         plugin_manager: Optional plugin manager for processors/filters
@@ -192,6 +194,7 @@ def generate_file(
         GenerationError: If generation fails
     """
     logger.info(f"Generating documentation from: {source_file}")
+    logger.info(f"Source directory: {source_dir}")
     logger.info(f"Output directory: {output_dir}")
     logger.info(f"Template directories: {template_dirs}")
 
@@ -201,9 +204,16 @@ def generate_file(
     logger.info(f"Template: {parsed.frontmatter.template}")
     logger.info(f"Output items: {len(parsed.frontmatter.output)}")
 
-    # Calculate output directory (preserve structure from pages/ to output/)
-    relative_dir = source_file.parent.name if source_file.parent.name != "." else ""
-    target_output_dir = output_dir / relative_dir if relative_dir else output_dir
+    # Calculate output directory (preserve structure from source_dir to output/)
+    # Check if the source file's parent is within the source directory.
+    if source_dir == source_file.parent or source_dir in source_file.parent.parents:
+        relative_dir = source_file.parent.relative_to(source_dir)
+    else:
+        # If not, output to the root of the output directory. This typically
+        # happens when a single file is passed as the source.
+        relative_dir = Path()
+
+    target_output_dir = output_dir / relative_dir
     logger.info(f"Target output directory: {target_output_dir}")
     target_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -369,6 +379,7 @@ def generate_directory(
             try:
                 generated = generate_file(
                     source_file,
+                    pages_dir,
                     output_dir,
                     template_dirs,
                     plugin_manager,
@@ -451,8 +462,14 @@ def generate(
 
     if source.is_file():
         logger.info("Source is a file, using generate_file")
+        # Use the parent directory of the file as the source_dir
         return generate_file(
-            source, output_dir, template_dirs, plugin_manager, default_griffe_config
+            source,
+            source.parent,
+            output_dir,
+            template_dirs,
+            plugin_manager,
+            default_griffe_config,
         )
     elif source.is_dir():
         logger.info("Source is a directory, using generate_directory")
