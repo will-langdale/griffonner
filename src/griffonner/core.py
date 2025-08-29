@@ -253,6 +253,7 @@ def generate_file(
                     if parsed.frontmatter.processors
                     else {}
                 ),
+                **parsed.frontmatter.custom_vars,
             }
             logger.info(f"Context keys prepared: {list(context.keys())}")
 

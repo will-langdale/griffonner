@@ -29,8 +29,8 @@ class TestGenerationError:
 class TestGenerateFile:
     """Tests for generate_file function."""
 
-    def test_generate_file_success(self):
-        """Tests successful file generation."""
+    def test_generate_file_with_custom_vars(self):
+        """Tests that custom_vars are passed to the template."""
         with TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -40,9 +40,7 @@ class TestGenerateFile:
 
             template_content = """# {{ obj.name }}
 
-{{ obj.docstring.summary if obj.docstring else "No description" }}
-
-Custom variable: {{ custom_vars.test_var }}
+Custom variable: {{ my_var }}
 """
 
             template_file = template_dir / "test.md.jinja2"
@@ -56,7 +54,7 @@ Custom variable: {{ custom_vars.test_var }}
                   - filename: "os_module.md"
                     griffe_target: "os"
                 custom_vars:
-                  test_var: "test value"
+                  my_var: "custom value"
                 ---
 
                 This is source content.
@@ -79,7 +77,7 @@ Custom variable: {{ custom_vars.test_var }}
 
             content = output_file.read_text()
             assert "# os" in content
-            assert "Custom variable: test value" in content
+            assert "Custom variable: custom value" in content
 
     def test_generate_file_multiple_outputs(self):
         """Tests file generation with multiple outputs."""

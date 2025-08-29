@@ -64,3 +64,5 @@ Griffonner has an extensible plugin system that allows for:
 *   **Bundles:** Collections of processors, filters, and templates that can be packaged together.
 
 Plugins are discovered via setuptools entry points, and local plugins can be loaded from Python modules.
+
+Your job is code, mine is command, review, version control
