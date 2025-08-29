@@ -161,6 +161,7 @@ class GriffonnerEventHandler(FileSystemEventHandler):
                 logger.info("File confirmed as frontmatter file, generating")
                 generated_files = generate_file(
                     file_path,
+                    self.source_dir,
                     self.output_dir,
                     self.template_dirs,
                     self.plugin_manager,

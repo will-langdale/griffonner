@@ -104,6 +104,7 @@ class TestPluginIntegration:
                         # Run generation
                         generate_file(
                             Path("test.md"),
+                            Path("."),
                             Path("output"),
                             plugin_manager=plugin_manager,
                         )

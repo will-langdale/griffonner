@@ -68,7 +68,10 @@ Custom variable: {{ my_var }}
 
             # Generate file
             generated = generate_file(
-                source_file, output_dir, template_dirs=[template_dir]
+                source_file,
+                source_file.parent,
+                output_dir,
+                template_dirs=[template_dir],
             )
 
             assert len(generated) == 1
@@ -115,7 +118,10 @@ Source content.
             output_dir = temp_path / "output"
 
             generated = generate_file(
-                source_file, output_dir, template_dirs=[template_dir]
+                source_file,
+                source_file.parent,
+                output_dir,
+                template_dirs=[template_dir],
             )
 
             assert len(generated) == 2
@@ -138,7 +144,7 @@ Source content.
             output_dir = temp_path / "output"
 
             with pytest.raises(FileNotFoundError):
-                generate_file(nonexistent_file, output_dir)
+                generate_file(nonexistent_file, nonexistent_file.parent, output_dir)
 
     def test_generate_file_invalid_frontmatter(self):
         """Tests error when frontmatter is invalid."""
@@ -159,7 +165,7 @@ Content.
             output_dir = temp_path / "output"
 
             with pytest.raises(ValueError):
-                generate_file(source_file, output_dir)
+                generate_file(source_file, source_file.parent, output_dir)
 
     def test_generate_file_nonexistent_griffe_target(self):
         """Tests error when griffe target doesn't exist."""
@@ -189,7 +195,12 @@ Content.
             output_dir = temp_path / "output"
 
             with pytest.raises(GenerationError, match="Failed to generate"):
-                generate_file(source_file, output_dir, template_dirs=[template_dir])
+                generate_file(
+                    source_file,
+                    source_file.parent,
+                    output_dir,
+                    template_dirs=[template_dir],
+                )
 
 
 class TestGenerateDirectory:
@@ -686,7 +697,7 @@ class TestGenerateDirectoryPassthrough:
             assert len(generated_files) == 4
 
             # Check generated file (from frontmatter)
-            generated_api = output_dir / "source" / "os_module.md"
+            generated_api = output_dir / "os_module.md"
             assert generated_api.exists()
             content = generated_api.read_text()
             assert "# os" in content
