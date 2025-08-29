@@ -205,11 +205,12 @@ def generate_file(
     logger.info(f"Output items: {len(parsed.frontmatter.output)}")
 
     # Calculate output directory (preserve structure from source_dir to output/)
-    try:
+    # Check if the source file's parent is within the source directory.
+    if source_dir == source_file.parent or source_dir in source_file.parent.parents:
         relative_dir = source_file.parent.relative_to(source_dir)
-    except ValueError:
-        # If source_file is not in source_dir, output to the root of the output_dir.
-        # This typically happens when a single file is passed as the source.
+    else:
+        # If not, output to the root of the output directory. This typically
+        # happens when a single file is passed as the source.
         relative_dir = Path()
 
     target_output_dir = output_dir / relative_dir
