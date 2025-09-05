@@ -384,7 +384,7 @@ Content.
 
     def test_generate_invalid_source_type(self):
         """Tests error when source is neither file nor directory."""
-        # This is hard to test in practice since Path objects are usually files or dirs
+        # This is hard to test in practise since Path objects are usually files or dirs
         # But we can test the error message format
         with TemporaryDirectory():
             # Create a special file (like a device or socket) - but we can't

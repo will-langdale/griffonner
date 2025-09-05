@@ -356,7 +356,7 @@ Did you mean one of these?
 Ensure the module is installed and importable
 ```
 
-## Best practices
+## Best practises
 
 ### Organisation
 

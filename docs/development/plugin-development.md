@@ -390,7 +390,7 @@ griffonner plugins
 griffonner generate test-docs/ --output output/
 ```
 
-## Best practices
+## Best practises
 
 ### Naming conventions
 

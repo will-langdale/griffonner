@@ -7,6 +7,7 @@ format:
     uvx ruff check . --fix
     uvx ruff format .
     uv run mypy .
+    uvx uwotm8 docs/ src/ test/ templates/ ./*.* --ignore "license filters phony"
 
 # Run tests
 test:
