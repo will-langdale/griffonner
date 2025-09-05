@@ -287,7 +287,7 @@ Griffonner ships with these built-in templates:
 - Docstring parsing with sections
 - Example usage if available
 
-## Best practices
+## Best practises
 
 ### 1. Template organisation
 

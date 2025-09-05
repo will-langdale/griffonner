@@ -18,7 +18,7 @@ This project uses `uv` for dependency management and `just` for task running:
 - `uv run pytest` - Run tests directly with pytest
 - `just docs` - Run local documentation development server
 - `just build` - Build documentation and package
-- `just clean` - Clean build artifacts
+- `just clean` - Clean build artefacts
 - `just -l` - List all available just commands
 
 ## Code style and standards

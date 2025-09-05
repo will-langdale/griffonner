@@ -379,7 +379,7 @@ griffonner watch docs/pages/ --verbose
 
 ### Ignore patterns
 
-The `--ignore` option allows you to exclude files and directories from processing using glob patterns. This is useful for avoiding temporary files, build artifacts, and version control directories.
+The `--ignore` option allows you to exclude files and directories from processing using glob patterns. This is useful for avoiding temporary files, build artefacts, and version control directories.
 
 **Pattern syntax:**
 - `*.ext` - Ignores all files with the specified extension
@@ -395,7 +395,7 @@ The `--ignore` option allows you to exclude files and directories from processin
 # Ignore build and cache directories
 --ignore "build/*" --ignore "__pycache__/*" --ignore ".git/*"
 
-# Ignore Node.js and Python artifacts
+# Ignore Node.js and Python artefacts
 --ignore "node_modules/*" --ignore "dist/*" --ignore "*.egg-info/*"
 ```
 

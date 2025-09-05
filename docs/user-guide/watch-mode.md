@@ -277,7 +277,7 @@ For very large projects, monitor memory usage:
 - Template cache grows over time
 - Restart watch mode periodically if needed
 
-## Best practices
+## Best practises
 
 ### 1. Project organisation
 

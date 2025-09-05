@@ -653,7 +653,7 @@ python -m build
 python -m twine upload dist/*
 ```
 
-## Best practices
+## Best practises
 
 ### Bundle design
 
