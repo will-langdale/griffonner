@@ -1,12 +1,12 @@
 # {{ obj.name }}
 
-{% if obj.bases %}
+{% if obj.bases -%}
 **Inherits from:** {{ obj.bases | join(', ') }}
-{% endif %}
+{%- endif %}
 
 {% if obj.docstring -%}
 {{ obj.docstring.description }}
-{% endif %}
+{%- endif %}
 
 ## Class Definition
 
@@ -16,68 +16,68 @@ class {{ obj.name }}{% if obj.bases %}({{ obj.bases | join(', ') }}){% endif %}:
     ...
 ```
 
-{% if obj.attributes %}
+{% if obj.attributes -%}
 ## Attributes
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
-{% for attr in obj.attributes.values() -%}
+{%- for attr in obj.attributes.values() -%}
 | `{{ attr.name }}` | {{ attr.annotation if attr.annotation else "Any" }} | {{ attr.docstring.summary if attr.docstring else "No description" }} |
-{% endfor %}
-{% endif %}
+{%- endfor %}
+{%- endif %}
 
-{% if obj.methods %}
+{% if obj.methods -%}
 ## Methods
 
-{% for method in obj.methods.values() %}
+{% for method in obj.methods.values() -%}
 ### {{ method.name }}
 
 {% if method.docstring -%}
 {{ method.docstring.summary }}
-{% endif %}
+{%- endif %}
 
 ```python
 {{ method.signature }}
 ```
 
-{% if method.docstring and method.docstring.description != method.docstring.summary -%}
+{%- if method.docstring and method.docstring.description != method.docstring.summary -%}
 {{ method.docstring.description }}
 
-{% if method.docstring.parameters %}
+{% if method.docstring.parameters -%}
 **Parameters:**
 
-{% for param in method.docstring.parameters %}
+{% for param in method.docstring.parameters -%}
 - `{{ param.name }}`: {{ param.description }}
-{% endfor %}
-{% endif %}
+{%- endfor %}
+{%- endif %}
 
-{% if method.docstring.returns %}
+{% if method.docstring.returns -%}
 **Returns:**
 
 {{ method.docstring.returns.description }}
-{% endif %}
+{%- endif %}
 
-{% if method.docstring.raises %}
+{% if method.docstring.raises -%}
 **Raises:**
 
-{% for exc in method.docstring.raises %}
+{% for exc in method.docstring.raises -%}
 - `{{ exc.annotation }}`: {{ exc.description }}
-{% endfor %}
-{% endif %}
-{% endif %}
+{%- endfor %}
+{%- endif %}
+{%- endif %}
 
-{% endfor %}
-{% endif %}
+{% endfor -%}
+{%- endif %}
 
-{% if obj.properties %}
+{% if obj.properties -%}
 ## Properties
 
-{% for prop in obj.properties.values() %}
+{% for prop in obj.properties.values() -%}
 ### {{ prop.name }}
 
 {% if prop.docstring -%}
 {{ prop.docstring.summary }}
-{% endif %}
+{%- endif %}
 
 ```python
 @property
@@ -85,9 +85,9 @@ def {{ prop.name }}(self) -> {{ prop.annotation if prop.annotation else "Any" }}
     ...
 ```
 
-{% if prop.docstring and prop.docstring.description != prop.docstring.summary -%}
+{%- if prop.docstring and prop.docstring.description != prop.docstring.summary -%}
 {{ prop.docstring.description }}
-{% endif %}
+{%- endif %}
 
-{% endfor %}
-{% endif %}
+{% endfor -%}
+{%- endif %}

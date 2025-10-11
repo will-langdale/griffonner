@@ -73,8 +73,6 @@ class TemplateLoader:
         self.env = jinja2.Environment(
             loader=loader,
             autoescape=False,  # We're generating docs, not HTML
-            trim_blocks=True,
-            lstrip_blocks=True,
         )
 
         # Register custom filters from plugin manager

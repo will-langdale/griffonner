@@ -264,6 +264,33 @@ Functions:
             # Should not be escaped since autoescape=False
             assert result == "<b>test</b>"
 
+    def test_whitespace_preservation_is_possible(self):
+        """Tests that the user can control whitespace in templates."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+
+            # Test that users can preserve whitespace when desired.
+            template_content = (
+                "My list.\n"
+                "{% for item in items %}\n"
+                "    - {{ item }}"
+                "{% endfor %}"
+            )
+
+            template_file = template_dir / "whitespace_control.jinja2"
+            template_file.write_text(template_content)
+
+            loader = TemplateLoader(template_dirs=[template_dir])
+            result = loader.render_template(
+                "whitespace_control.jinja2", {"items": ["a", "b"]}
+            )
+
+            expected = "My list.\n\n    - a\n    - b"
+
+            assert result == expected
+
 
 class TestTemplateDiscovery:
     """Tests for enhanced template discovery (Phase 2)."""
