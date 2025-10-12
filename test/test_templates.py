@@ -1,5 +1,6 @@
 """Tests for templates module."""
 
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -431,3 +432,89 @@ class TestBuiltInTemplates:
         # Template sets should include python/default
         template_sets = loader.get_available_template_sets()
         assert "python/default" in template_sets
+
+
+class TestWhitespaceControl:
+    """Tests for proper whitespace control after removing trim_blocks/lstrip_blocks."""
+
+    def test_whitespace_preservation_is_possible(self):
+        """Tests that the user can control whitespace in templates."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+
+            # With default Jinja2 settings, users can achieve fine-grained control
+            # by using '-' to remove newlines after blocks.
+            template_content = textwrap.dedent("""\
+                My list.
+                {% for item in items -%}
+                - {{ item }}
+                {% endfor %}""")
+
+            template_file = template_dir / "whitespace_control.jinja2"
+            template_file.write_text(template_content)
+
+            loader = TemplateLoader(template_dirs=[template_dir])
+            result = loader.render_template(
+                "whitespace_control.jinja2", {"items": ["a", "b"]}
+            )
+
+            expected = textwrap.dedent("""\
+                My list.
+                - a
+                - b
+                """)
+
+            assert result == expected
+
+    def test_python_function_signature_formatting(self):
+        """Tests that Python function signatures can be properly formatted."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+
+            # This template demonstrates proper indentation control
+            # Without trim_blocks/lstrip_blocks, we can control whitespace precisely
+            template_content = """\
+def {{ name }}(
+{% for param in func.parameters %}\
+    {{ param.name }}: {{ param.annotation }}\
+{% if not loop.last %},{% endif %}
+{% endfor %}):"""
+
+            template_file = template_dir / "function_signature.jinja2"
+            template_file.write_text(template_content)
+
+            loader = TemplateLoader(template_dirs=[template_dir])
+            result = loader.render_template(
+                "function_signature.jinja2",
+                {
+                    "name": "my_function",
+                    "func": {
+                        "parameters": [
+                            {"name": "param1", "annotation": "str"},
+                            {"name": "param2", "annotation": "int"},
+                        ]
+                    },
+                },
+            )
+
+            expected = """\
+def my_function(
+    param1: str,
+    param2: int
+):"""
+
+            assert result == expected
+
+    def test_jinja2_environment_defaults(self):
+        """Tests that Jinja2 environment uses default settings."""
+        loader = TemplateLoader()
+
+        # Verify that trim_blocks and lstrip_blocks are False (Jinja2 defaults)
+        assert loader.env.trim_blocks is False
+        assert loader.env.lstrip_blocks is False
+        # Verify autoescape is still disabled for documentation
+        assert loader.env.autoescape is False

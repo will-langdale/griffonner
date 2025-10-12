@@ -1,6 +1,6 @@
 # {{ obj.name }}
 
-{% if obj.docstring -%}
+{% if obj.docstring %}
 {{ obj.docstring.summary }}
 {% endif %}
 
@@ -10,7 +10,7 @@
 {{ obj.signature }}
 ```
 
-{% if obj.docstring and obj.docstring.description != obj.docstring.summary -%}
+{% if obj.docstring and obj.docstring.description != obj.docstring.summary %}
 ## Description
 
 {{ obj.docstring.description }}
