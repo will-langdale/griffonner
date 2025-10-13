@@ -1,5 +1,6 @@
 """Tests for templates module."""
 
+import textwrap
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -263,6 +264,43 @@ Functions:
 
             # Should not be escaped since autoescape=False
             assert result == "<b>test</b>"
+
+    def test_whitespace_preserved(self):
+        """Template whitespace should be preserved by default Jinja2 settings."""
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            template_dir = temp_path / "templates"
+            template_dir.mkdir()
+
+            # Use explicit Jinja2 whitespace control
+            template_content = textwrap.dedent("""\
+                def {{ name }}(
+                {%- for param in params %}
+                    {{ param }}{% if not loop.last %},{% endif %}
+                {%- endfor %}
+                ):
+                
+            """)
+
+            template_file = template_dir / "whitespace_test.jinja2"
+            template_file.write_text(template_content)
+
+            loader = TemplateLoader(template_dirs=[template_dir])
+            result = loader.render_template(
+                "whitespace_test.jinja2",
+                {"name": "my_function", "params": ["param1: str", "param2: int"]},
+            )
+
+            expected = textwrap.dedent("""\
+                def my_function(
+                    param1: str,
+                    param2: int
+                ):
+            """)
+
+            # Assert exact equality
+            assert result == expected
 
 
 class TestTemplateDiscovery:

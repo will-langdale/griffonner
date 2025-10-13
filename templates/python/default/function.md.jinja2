@@ -16,16 +16,16 @@
 {{ obj.docstring.description }}
 {% endif %}
 
-{% if obj.docstring and obj.docstring.parameters %}
+{% if obj.docstring and obj.docstring.parameters -%}
 ## Parameters
 
-{% for param in obj.docstring.parameters %}
+{% for param in obj.docstring.parameters -%}
 ### {{ param.name }}
 
 **Type:** {{ param.annotation if param.annotation else "Any" }}
 
 {{ param.description }}
-{% endfor %}
+{% endfor -%}
 {% endif %}
 
 {% if obj.docstring and obj.docstring.returns %}
@@ -46,12 +46,12 @@
 {% endfor %}
 {% endif %}
 
-{% if obj.docstring and obj.docstring.examples %}
+{% if obj.docstring and obj.docstring.examples -%}
 ## Examples
 
-{% for example in obj.docstring.examples %}
+{% for example in obj.docstring.examples -%}
 ```python
 {{ example.description }}
 ```
-{% endfor %}
+{% endfor -%}
 {% endif %}

@@ -7,7 +7,7 @@
 {% if obj.classes %}
 ## Classes
 
-{% for class_obj in obj.classes.values() %}
+{% for class_obj in obj.classes.values() -%}
 ### {{ class_obj.name }}
 
 {% if class_obj.docstring -%}
@@ -29,16 +29,16 @@ class {{ class_obj.name }}{% if class_obj.bases %}({{ class_obj.bases | join(', 
 |--------|-------------|
 {% for method in class_obj.methods.values() -%}
 | `{{ method.name }}` | {{ method.docstring.summary if method.docstring else "No description" }} |
-{% endfor %}
+{% endfor -%}
 {% endif %}
 
-{% endfor %}
+{% endfor -%}
 {% endif %}
 
 {% if obj.functions %}
 ## Functions
 
-{% for func in obj.functions.values() %}
+{% for func in obj.functions.values() -%}
 ### {{ func.name }}
 
 {% if func.docstring -%}
@@ -52,22 +52,22 @@ class {{ class_obj.name }}{% if class_obj.bases %}({{ class_obj.bases | join(', 
 {% if func.docstring and func.docstring.description != func.docstring.summary -%}
 {{ func.docstring.description }}
 
-{% if func.docstring.parameters %}
+{% if func.docstring.parameters -%}
 **Parameters:**
 
-{% for param in func.docstring.parameters %}
+{% for param in func.docstring.parameters -%}
 - `{{ param.name }}`: {{ param.description }}
-{% endfor %}
-{% endif %}
+{% endfor -%}
+{% endif -%}
 
-{% if func.docstring.returns %}
+{% if func.docstring.returns -%}
 **Returns:**
 
 {{ func.docstring.returns.description }}
-{% endif %}
-{% endif %}
+{% endif -%}
+{% endif -%}
 
-{% endfor %}
+{% endfor -%}
 {% endif %}
 
 {% if obj.attributes %}
@@ -77,5 +77,5 @@ class {{ class_obj.name }}{% if class_obj.bases %}({{ class_obj.bases | join(', 
 |-----------|------|-------------|
 {% for attr in obj.attributes.values() -%}
 | `{{ attr.name }}` | {{ attr.annotation if attr.annotation else "Any" }} | {{ attr.docstring.summary if attr.docstring else "No description" }} |
-{% endfor %}
+{% endfor -%}
 {% endif %}
